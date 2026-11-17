@@ -8,14 +8,14 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 
+const isWin = process.platform === 'win32';
+const SUPPORTED = process.platform === 'darwin' || isWin;
 function helperPath() {
-  const candidates = [
-    path.join(process.resourcesPath || '', 'bin', 'window-watcher'),
-    path.join(app.getAppPath(), 'build', 'bin', 'window-watcher')
-  ];
+  const name = isWin ? 'win-helper.exe' : 'window-watcher';
+  const candidates = [path.join(process.resourcesPath || '', 'bin', name), path.join(app.getAppPath(), 'build', 'bin', name)];
   return candidates.find((p) => {
     try {
-      fs.accessSync(p, fs.constants.X_OK);
+      fs.accessSync(p, isWin ? fs.constants.R_OK : fs.constants.X_OK);
       return true;
     } catch {
       return false;
@@ -29,15 +29,15 @@ let listener = null;
 
 module.exports = {
   available() {
-    return process.platform === 'darwin' && !!helperPath();
+    return SUPPORTED && !!helperPath();
   },
   start(onWindows) {
     listener = onWindows;
-    if (child || process.platform !== 'darwin') return;
+    if (child || !SUPPORTED) return;
     const bin = helperPath();
     if (!bin) return;
     try {
-      child = spawn(bin, [String(process.pid)], { stdio: ['ignore', 'pipe', 'ignore'] });
+      child = spawn(bin, [String(process.pid)], { stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true });
     } catch {
       child = null;
       return;
@@ -58,6 +58,23 @@ module.exports = {
     });
     child.on('exit', () => {
       child = null;
+    });
+  },
+  /* Windows: put a wallpaper window behind the desktop icons. rect is in physical pixels. */
+  attachWallpaper(hwnd, rect) {
+    return new Promise((resolve) => {
+      const bin = isWin && helperPath();
+      if (!bin) return resolve(false);
+      let out = '';
+      try {
+        const p = spawn(bin, ['attach', String(hwnd), String(Math.round(rect.x)), String(Math.round(rect.y)), String(Math.round(rect.width)), String(Math.round(rect.height))], { windowsHide: true });
+        p.stdout.on('data', (d) => (out += d));
+        p.on('exit', (code) => resolve(code === 0 && out.includes('"ok":true')));
+        p.on('error', () => resolve(false));
+        setTimeout(() => resolve(false), 8000);
+      } catch {
+        resolve(false);
+      }
     });
   },
   stop() {

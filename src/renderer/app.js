@@ -8,11 +8,36 @@
   let state = null;
   let page = 'welcome';
 
+  /* ---------------- Windows wording (taskbar, system tray, Ctrl+Alt+D) ---------------- */
+  const WIN_WORDS = [
+    [/Dock icons/g, 'taskbar icons'],
+    [/the Dock/g, 'the taskbar'],
+    [/your Dock/g, 'your taskbar'],
+    [/Dock/g, 'taskbar'],
+    [/menu bar/g, 'system tray'],
+    [/this Mac/g, 'this PC'],
+    [/another Mac/g, 'another PC'],
+    [/⌥/g, 'Ctrl'],
+    [/⌘/g, 'Alt']
+  ];
+  const isWinApp = () => state && state.platform === 'win32';
+  const words = (text) => (isWinApp() ? WIN_WORDS.reduce((t, [re, to]) => t.replace(re, to), text) : text);
+  function localize(root = document.body) {
+    if (!isWinApp()) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = walker.nextNode())) {
+      const next = words(n.nodeValue);
+      if (next !== n.nodeValue) n.nodeValue = next;
+    }
+    $$('[placeholder]').forEach((el) => (el.placeholder = words(el.placeholder)));
+  }
+
   /* ---------------- feedback ---------------- */
   let toastTimer = null;
   function toast(text) {
     const t = $('#appToast');
-    t.textContent = text;
+    t.textContent = words(text);
     t.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
@@ -234,6 +259,7 @@
     $('#supportLine').innerHTML = state.supportEmail ? `Need help? <a href="#" id="mailLink" style="color:#a9abff">${state.supportEmail}</a>` : '';
     const ml = $('#mailLink');
     if (ml) ml.onclick = (e) => (e.preventDefault(), api.openExternal('mailto:' + state.supportEmail));
+    localize();
   }
 
   function seg(sel, list, value, onPick) {
@@ -310,6 +336,7 @@
   api.getState().then((s) => {
     state = s;
     if (s.platform === 'darwin') document.documentElement.classList.add('vibrant');
+    document.documentElement.classList.add('platform-' + s.platform);
     render();
     go(location.hash || 'welcome');
   });

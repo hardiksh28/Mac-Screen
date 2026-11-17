@@ -2,7 +2,7 @@
 
 **Website:** https://macscreen.vercel.app
 
-Live, interactive wallpapers for macOS. Snowballs roll onto your Dock and stack into snowmen you can dress up. Snow falls over your screen and **piles up on top of your windows**. Your cursor blows it around, and shaking the cursor starts a blizzard. You can deck your desktop with lights and a tree, send Santa, a snowplough or a yeti, and switch to a wizard castle, a neon night drive or a coral reef.
+Live, interactive wallpapers for **macOS and Windows**. Snowballs roll onto your Dock and stack into snowmen you can dress up. Snow falls over your screen and **piles up on top of your windows**. Your cursor blows it around, and shaking the cursor starts a blizzard. You can deck your desktop with lights and a tree, send Santa, a snowplough or a yeti, and switch to a wizard castle, a neon night drive or a coral reef.
 
 **Price:** free to try, **$1 lifetime** for everything (Dodo Payments license key).
 

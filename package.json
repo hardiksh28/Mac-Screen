@@ -1,7 +1,7 @@
 {
   "name": "desk-diorama",
   "productName": "Desk Diorama",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Live, interactive desktop wallpapers: build snowmen on your Dock, cast spells, cruise the city and feed the fish.",
   "main": "src/main/main.js",
   "author": "Desk Diorama",
@@ -13,7 +13,7 @@
     "preview": "node scripts/serve-preview.js",
     "icons": "node scripts/make-assets.js",
     "dist:mac": "bash scripts/build-helper.sh && electron-builder --mac --publish never",
-    "dist:win": "electron-builder --win",
+    "dist:win": "electron-builder --win --publish never",
     "dist": "bash scripts/build-helper.sh && electron-builder --mac --win",
     "helper": "bash scripts/build-helper.sh",
     "site": "node scripts/build-site.js"
@@ -25,7 +25,7 @@
   "build": {
     "appId": "com.deskdiorama.app",
     "productName": "Desk Diorama",
-    "copyright": "\u00a9 2026 Desk Diorama",
+    "copyright": "© 2026 Desk Diorama",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -70,7 +70,7 @@
           "from": "build/bin",
           "to": "bin",
           "filter": [
-            "**/*"
+            "window-watcher"
           ]
         }
       ],
@@ -100,12 +100,33 @@
     "win": {
       "icon": "build/icon.png",
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "Desk-Diorama-Setup.${ext}",
+      "extraResources": [
+        {
+          "from": "build/bin",
+          "to": "bin",
+          "filter": [
+            "win-helper.exe"
+          ]
+        }
       ]
     },
     "nsis": {
       "oneClick": true,
-      "perMachine": false
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "shortcutName": "Desk Diorama",
+      "artifactName": "Desk-Diorama-Setup.${ext}"
     },
     "publish": null
   }

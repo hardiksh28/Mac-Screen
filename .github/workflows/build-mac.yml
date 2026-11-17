@@ -58,12 +58,76 @@ jobs:
             dist/*.zip
           retention-days: 30
 
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build window helper (wallpaper behind icons, snow on windows)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build/bin | Out-Null
+          $fw = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319"
+          & "$fw\csc.exe" /nologo /optimize+ /target:winexe /platform:anycpu /define:UIA `
+            /lib:"$fw\WPF" /r:UIAutomationClient.dll /r:UIAutomationTypes.dll /r:WindowsBase.dll `
+            /out:build/bin/win-helper.exe build/helper/win-helper.cs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Smoke-test the window helper
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath build/bin/win-helper.exe -ArgumentList '1' -RedirectStandardOutput helper.out -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 4
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          Get-Content helper.out -TotalCount 2
+          if (-not (Select-String -Path helper.out -Pattern '"front"' -Quiet)) { exit 1 }
+
+      - name: Build installer (unsigned)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win --publish never
+
+      - name: Check the installer
+        shell: pwsh
+        run: |
+          Get-ChildItem dist | Format-Table Name, Length
+          Get-ChildItem -Recurse dist/win-unpacked/resources/bin
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Desk-Diorama-windows
+          path: dist/*.exe
+          retention-days: 30
+
+  # Publishes / updates the GitHub Release so these links always give the newest build:
+  #   https://github.com/<owner>/<repo>/releases/latest/download/Desk-Diorama-universal.dmg
+  #   https://github.com/<owner>/<repo>/releases/latest/download/Desk-Diorama-Setup.exe
+  release:
+    needs: [mac, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Read version
         id: ver
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
-      # Publishes / updates the GitHub Release so the download link
-      # https://github.com/<owner>/<repo>/releases/latest/download/Desk-Diorama-universal.dmg always works.
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - run: ls -la out
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -71,8 +135,12 @@ jobs:
           name: Desk Diorama ${{ steps.ver.outputs.version }}
           target_commitish: ${{ github.sha }}
           make_latest: true
+          overwrite_files: true
           body: |
-            **Install:** open the .dmg and drag Desk Diorama to Applications. The first time, macOS can't verify the developer: open **System Settings → Privacy & Security → Open Anyway**.
+            **Mac:** open the .dmg and drag Desk Diorama to Applications. The first time, macOS can't verify the developer: open **System Settings → Privacy & Security → Open Anyway**.
+
+            **Windows:** run Desk-Diorama-Setup.exe. If Windows SmartScreen says it protected your PC, click **More info → Run anyway**.
           files: |
-            dist/*.dmg
-            dist/*.zip
+            out/*.dmg
+            out/*.zip
+            out/*.exe

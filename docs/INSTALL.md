@@ -27,4 +27,11 @@ xattr -cr "/Applications/Desk Diorama.app"
 - To unlock everything: **snowman icon → Unlock Everything**, buy, then copy the **license key from your email**, paste it and press **Activate**.
 - Optional: in Settings, turn on **Open at login**.
 
+## Windows 10 & 11
+
+1. Download **Desk-Diorama-Setup.exe** and run it. It installs and opens by itself.
+2. If **"Windows protected your PC"** appears (the installer isn't code-signed yet), click **More info → Run anyway**.
+3. Desk Diorama lives in the **system tray** (bottom-right, near the clock; it may be under the **^** arrow). Click it to open the app. Toys stand on top of your taskbar and the live wallpaper sits behind your desktop icons.
+4. Unlocking works the same: paste your license key under **Unlock Pro → Activate**. Press **Ctrl+Alt+D** to hide or show the toys.
+
 Questions: hardikhs2806@gmail.com

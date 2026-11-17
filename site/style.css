@@ -385,3 +385,10 @@ footer img {
     padding: 110px 16px 60px;
   }
 }
+.install h3 {
+  margin: 22px 0 4px;
+  font-size: 17px;
+}
+.hero small a {
+  color: #fff;
+}

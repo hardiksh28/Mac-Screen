@@ -1,7 +1,14 @@
 (function () {
   const S = window.SITE;
   document.querySelectorAll('[data-price]').forEach((el) => (el.textContent = S.price));
-  document.querySelectorAll('[data-download]').forEach((el) => (el.href = S.downloadUrl));
+  // offer the right installer: Windows visitors get the .exe, everyone else the Mac .dmg
+  const onWindows = /Windows/i.test(navigator.userAgent);
+  document.querySelectorAll('[data-download]').forEach((el) => {
+    el.href = onWindows ? S.windowsUrl : S.downloadUrl;
+    if (onWindows) el.innerHTML = el.innerHTML.replace('\uF8FF', '').replace(/for Mac/, 'for Windows');
+  });
+  document.querySelectorAll('[data-download-mac]').forEach((el) => (el.href = S.downloadUrl));
+  document.querySelectorAll('[data-download-win]').forEach((el) => (el.href = S.windowsUrl));
   document.querySelectorAll('[data-buy]').forEach((el) => (el.href = S.buyUrl));
   document.querySelectorAll('[data-mail]').forEach((el) => (el.href = 'mailto:' + S.supportEmail));
 

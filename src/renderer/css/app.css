@@ -1114,3 +1114,14 @@ code {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Windows: the window buttons sit top-right over the content (title bar overlay) */
+html.platform-win32 .drag {
+  height: 40px;
+}
+html.platform-win32 .page-head {
+  padding-right: 140px;
+}
+html.platform-win32 .brand {
+  padding-top: 14px;
+}

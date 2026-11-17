@@ -21,6 +21,7 @@ const windowWatcher = require('./windows');
 const art = require('./art');
 
 const isMac = process.platform === 'darwin';
+const isWin = process.platform === 'win32';
 const DEV = process.argv.includes('--dev');
 const RENDERER = path.join(__dirname, '..', 'renderer');
 const BAND_HEIGHT = 440; // height of the toy layer that sits on top of the Dock
@@ -146,7 +147,7 @@ function publicState(role, win) {
     supportEmail: config.SUPPORT_EMAIL,
     licenseInfo: license.info(),
     loginItemSupported: isMac || process.platform === 'win32',
-    wallpaperSupported: isMac || process.platform === 'linux'
+    wallpaperSupported: isMac || isWin || process.platform === 'linux'
   };
 }
 
@@ -195,8 +196,30 @@ function createWallpaper(display) {
   win.setIgnoreMouseEvents(true);
   if (isMac) win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
   win.loadFile(path.join(RENDERER, 'wallpaper.html'));
-  win.once('ready-to-show', () => win.showInactive());
+  if (isWin) win.once('ready-to-show', () => attachToDesktop(win, display));
+  else win.once('ready-to-show', () => win.showInactive());
   return win;
+}
+
+/* Windows: slide the wallpaper window in behind the desktop icons (the "WorkerW" trick).
+   If that fails we don't show it at all, rather than covering everything on screen. */
+function hwndOf(win) {
+  const b = win.getNativeWindowHandle();
+  return b.length >= 8 ? b.readBigUInt64LE(0).toString() : String(b.readUInt32LE(0));
+}
+async function attachToDesktop(win, display) {
+  if (win.isDestroyed()) return;
+  const rect = screen.dipToScreenRect(null, display.bounds);
+  const ok = await windowWatcher.attachWallpaper(hwndOf(win), rect);
+  if (win.isDestroyed()) return;
+  if (ok) win.showInactive();
+  else console.error('Desk Diorama: could not place the wallpaper behind the desktop icons');
+}
+// Windows reports physical pixels; Electron works in DIPs
+function toDip(r) {
+  if (!isWin || !r) return r;
+  const d = screen.screenToDipRect(null, { x: r.x, y: r.y, width: r.w, height: r.h });
+  return Object.assign({}, r, { x: d.x, y: d.y, w: d.width, h: d.height });
 }
 
 function overlayBounds() {
@@ -230,6 +253,14 @@ function createOverlay() {
   win.__role = 'overlay';
   // 'status' sits above the Dock so toys can stand on it.
   win.setAlwaysOnTop(true, isMac ? 'status' : 'screen-saver');
+  // Windows: the taskbar likes to jump back on top, so keep nudging the toy layer above it
+  if (isWin) {
+    const keepOnTop = setInterval(() => {
+      if (win.isDestroyed()) return clearInterval(keepOnTop);
+      win.setAlwaysOnTop(true, 'screen-saver');
+      win.moveTop();
+    }, 3000);
+  }
   if (isMac) win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(RENDERER, 'overlay.html'));
@@ -257,7 +288,8 @@ function rebuildLayers() {
   for (const d of displays) {
     if (!wantIds.has(d.id)) continue;
     const existing = wallpaperWins.get(d.id);
-    if (existing) existing.setBounds(d.bounds);
+    if (existing && isWin) attachToDesktop(existing, d);
+    else if (existing) existing.setBounds(d.bounds);
     else wallpaperWins.set(d.id, createWallpaper(d));
   }
   // toy overlay on the primary display
@@ -280,16 +312,18 @@ function updateWindowWatcher() {
 let lastWindows = '';
 let lastInfo = null;
 let away = false;
-const FINDER = 'com.apple.finder';
+// being "on the desktop": Finder on a Mac, the desktop / File Explorer on Windows
+const DESKTOP_APPS = new Set(['com.apple.finder', 'desktop', 'explorer']);
 function computeAway(info) {
   if (settings.overApps || decorating || !info || !info.front) return false;
-  if (info.pid === process.pid || info.front.toLowerCase() === FINDER) return false;
+  if (info.pid === process.pid || DESKTOP_APPS.has(info.front.toLowerCase())) return false;
   const b = screen.getPrimaryDisplay().bounds;
   // only when the app in front actually has a window on this screen
   return (info.w || []).some((w) => w.f && w.x < b.x + b.width && w.x + w.w > b.x && w.y < b.y + b.height && w.y + w.h > b.y);
 }
-function sendWindows(info) {
-  lastInfo = info;
+function sendWindows(raw) {
+  lastInfo = raw; // kept as the helper sent it (resendWindows converts again)
+  const info = isWin ? Object.assign({}, raw, { w: (raw.w || []).map(toDip), dock: raw.dock ? toDip(raw.dock) : raw.dock }) : raw;
   if (!overlayWin || overlayWin.isDestroyed()) return;
   const ob = overlayWin.getBounds();
   const snowOnWindows = weatherOn() && settings.weather.onWindows !== false;
@@ -335,7 +369,8 @@ function openApp(section) {
     minWidth: 920,
     minHeight: 640,
     title: 'Desk Diorama',
-    titleBarStyle: isMac ? 'hiddenInset' : 'default',
+    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    ...(isWin ? { titleBarOverlay: { color: '#0c0e1b', symbolColor: '#c9cdf2', height: 40 }, icon: path.join(__dirname, '..', '..', 'build', 'icon.png') } : {}),
     trafficLightPosition: { x: 18, y: 18 },
     // translucent sidebar on macOS
     ...(isMac ? { vibrancy: 'sidebar', visualEffectState: 'active', backgroundColor: '#00000000' } : { backgroundColor: '#0c0e1b' }),
@@ -530,7 +565,7 @@ function rebuildTray() {
     { label: `Weather: ${(catalog.weatherTypes.find((t) => t.id === W.type) || {}).label || 'Off'}`, submenu: weatherMenu },
     { label: 'Decorate Your Screen…', click: () => setDecorating(true) },
     { type: 'separator' },
-    { label: 'Show Toys on Dock', type: 'checkbox', checked: settings.toys, accelerator: 'Alt+CommandOrControl+D', click: (i) => setSetting('toys', i.checked) },
+    { label: isMac ? 'Show Toys on Dock' : 'Show Toys on Taskbar', type: 'checkbox', checked: settings.toys, accelerator: 'Alt+CommandOrControl+D', click: (i) => setSetting('toys', i.checked) },
     { label: 'Stay Visible Over Apps', type: 'checkbox', checked: !!settings.overApps, click: (i) => setSetting('overApps', i.checked) },
     { label: 'Live Wallpaper', type: 'checkbox', checked: settings.wallpaper, click: (i) => setSetting('wallpaper', i.checked) },
     { label: 'Sound Effects', type: 'checkbox', checked: settings.sound, click: (i) => setSetting('sound', i.checked) },
