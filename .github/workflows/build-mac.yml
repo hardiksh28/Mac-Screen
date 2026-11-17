@@ -51,10 +51,21 @@ jobs:
             dist/*.zip
           retention-days: 30
 
-      - name: Attach to GitHub release (tags only)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Read version
+        id: ver
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # Publishes / updates the GitHub Release so the download link
+      # https://github.com/<owner>/<repo>/releases/latest/download/Desk-Diorama-universal.dmg always works.
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Desk Diorama ${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            **Install:** open the .dmg and drag Desk Diorama to Applications. The first time, macOS can't verify the developer: open **System Settings → Privacy & Security → Open Anyway**.
           files: |
             dist/*.dmg
             dist/*.zip
