@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Desk Diorama: let it snow on your Mac</title>
+    <meta name="description" content="Live wallpapers for macOS. Snow piles up on your windows, snowballs roll into snowmen on your Dock, and you can deck your desktop with lights. $1.49 lifetime." />
+    <meta property="og:title" content="Desk Diorama: let it snow on your Mac" />
+    <meta property="og:description" content="Snow that piles up on your windows, snowmen on your Dock, a wizard castle, a neon night drive. $1.49 lifetime." />
+    <meta property="og:image" content="assets/thumbs/winter.jpg" />
+    <link rel="icon" href="assets/icon-64.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="logo" href="#"><img src="assets/icon-64.png" alt="" /> Desk Diorama</a>
+      <nav>
+        <a href="#demo">Demo</a>
+        <a href="#themes">Themes</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#install">Install</a>
+        <a class="btn small" data-download href="#download">Download</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <img class="hero-bg" src="assets/wallpapers/winter-night.jpg" alt="" />
+      <div class="hero-shade"></div>
+      <canvas id="heroSnow"></canvas>
+      <div class="hero-inner">
+        <span class="pill">❄️ For macOS · Apple Silicon &amp; Intel</span>
+        <h1>Let it snow<br />on your Mac.</h1>
+        <p>Live wallpapers with snow that <b>piles up on your windows</b>, snowballs that roll into <b>snowmen on your Dock</b>, and lights you can hang on your desktop. Your cursor blows the snow around; shake it for a blizzard.</p>
+        <div class="cta">
+          <a class="btn primary big" data-download href="#download"> Download for Mac</a>
+          <a class="btn ghost big" href="#demo">Try it here first ↓</a>
+        </div>
+        <small>Free to try · Unlock everything for <span data-price>$1.49</span>, once, forever</small>
+      </div>
+    </section>
+
+    <section id="demo" class="wrap">
+      <h2>Play with it right here</h2>
+      <p class="sub">This is the real app running in your browser. Drag a snowball onto another to stack them; three make a snowman, and double-clicking it opens the wardrobe. Shake your cursor for a blizzard, and drag the window to watch the snow slide off.</p>
+      <div class="demo">
+        <div class="demo-bar">
+          <button data-demo="winter" class="on">Snowy Village</button>
+          <button data-demo="wizard">Wizard Academy</button>
+          <button data-demo="drive">Night Drive</button>
+          <button data-demo="ocean">Coral Reef</button>
+        </div>
+        <iframe id="demoFrame" title="Desk Diorama live demo" loading="lazy"></iframe>
+      </div>
+    </section>
+
+    <section id="themes" class="wrap">
+      <h2>Four worlds. More coming.</h2>
+      <div class="cards">
+        <article class="card">
+          <img src="assets/thumbs/winter.jpg" alt="Snowy Village" loading="lazy" />
+          <div><h3>Snowy Village <span class="tag free">Free</span></h3><p>Moonlit, golden-hour or cozy-cabin scenes. Build snowmen, dress them up (32 items), and catch the gifts Santa drops. Send a snowplough or a yeti.</p></div>
+        </article>
+        <article class="card">
+          <img src="assets/thumbs/wizard.jpg" alt="Wizard Academy" loading="lazy" />
+          <div><h3>Wizard Academy <span class="tag">Pro</span></h3><p>A castle under the aurora. Your cursor leaves a wand trail, an owl brings fortune letters, and a cauldron brews random spells.</p></div>
+        </article>
+        <article class="card">
+          <img src="assets/thumbs/drive.jpg" alt="Night Drive" loading="lazy" />
+          <div><h3>Night Drive <span class="tag">Pro</span></h3><p>Neon city, synthwave sun. Customize a car on your Dock, launch it off a ramp, knock over the cones.</p></div>
+        </article>
+        <article class="card">
+          <img src="assets/thumbs/ocean.jpg" alt="Coral Reef" loading="lazy" />
+          <div><h3>Coral Reef <span class="tag">Pro</span></h3><p>Sun rays and kelp. Feed your fish, open the treasure chest for new ones, puff up the puffer.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="wrap features">
+      <div class="feat"><span>🌨️</span><h3>Snow that sticks</h3><p>Flakes land on top of your app windows and the Dock. Move a window and the snow slides off. Swipe your cursor to brush it away.</p></div>
+      <div class="feat"><span>🎛️</span><h3>You control the weather</h3><p>Light flurries to a blizzard, wind left or right, or switch to rain, cherry blossoms, autumn leaves, hearts or confetti.</p></div>
+      <div class="feat"><span>🎄</span><h3>Deck your screen</h3><p>A tree, string lights you stretch by dragging, baubles, a wreath and a snow globe, all behind your windows.</p></div>
+      <div class="feat"><span>🔋</span><h3>Light on battery</h3><p>Pauses on battery and when your screen locks. Toys hide with ⌥⌘D. Lives quietly in the menu bar.</p></div>
+    </section>
+
+    <section id="pricing" class="wrap pricing">
+      <div class="price-card">
+        <div>
+          <span class="tag gold">Lifetime</span>
+          <h2><span data-price>$1.49</span> once. Everything, forever.</h2>
+          <ul>
+            <li>All themes, including every new one we add</li>
+            <li>Every snowman outfit</li>
+            <li>All weather: rain, blossoms, leaves, hearts, confetti</li>
+            <li>The full decoration box</li>
+            <li>Snowplough and yeti</li>
+            <li>Use your own picture as an animated wallpaper</li>
+          </ul>
+        </div>
+        <div class="price-side">
+          <a class="btn primary big" data-buy href="#">Buy for <span data-price>$1.49</span></a>
+          <p>Secure checkout by Dodo Payments. Your license key arrives by email; paste it into the app under <b>Unlock Pro</b>.</p>
+          <a class="btn ghost" data-download href="#download">Download the free version</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" class="wrap install">
+      <h2>Installing</h2>
+      <ol>
+        <li>Open the <b>.dmg</b> and drag <b>Desk Diorama</b> into <b>Applications</b>.</li>
+        <li>Open it. macOS says it <i>can't verify the developer</i> (we're a tiny indie app), so click <b>Done</b>.</li>
+        <li>Go to <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b>. You only do this once.</li>
+        <li>Look for the <b>snowman ☃︎ in your menu bar</b>. Everything lives there.</li>
+      </ol>
+      <details>
+        <summary>It says the app "is damaged"?</summary>
+        <p>Open Terminal, run <code>xattr -cr "/Applications/Desk Diorama.app"</code>, and open it again.</p>
+      </details>
+      <details>
+        <summary>Will it slow down my Mac?</summary>
+        <p>It's built to be light: the wallpaper runs at 30 fps by default, everything pauses on battery and when the screen is locked, and you can switch any part off.</p>
+      </details>
+      <details>
+        <summary>I bought it. Where's my key?</summary>
+        <p>In the email from Dodo Payments right after checkout (check spam). Paste it in the app under <b>Unlock Pro → Activate</b>. It works on up to 3 Macs.</p>
+      </details>
+    </section>
+
+    <footer>
+      <img src="assets/icon-64.png" alt="" />
+      <p>Desk Diorama · Made with ❄️ by an indie developer · <a data-mail href="#">Contact</a></p>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="site.js"></script>
+  </body>
+</html>

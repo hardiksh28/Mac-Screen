@@ -15,7 +15,8 @@
     "dist:mac": "bash scripts/build-helper.sh && electron-builder --mac --publish never",
     "dist:win": "electron-builder --win",
     "dist": "bash scripts/build-helper.sh && electron-builder --mac --win",
-    "helper": "bash scripts/build-helper.sh"
+    "helper": "bash scripts/build-helper.sh",
+    "site": "node scripts/build-site.js"
   },
   "devDependencies": {
     "electron": "^38.4.0",

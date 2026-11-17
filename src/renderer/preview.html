@@ -253,7 +253,11 @@
           drag = null;
           document.body.classList.remove('dragwin');
         });
-        if (q.get('clean') === '1') document.querySelector('.menubar').style.display = 'none';
+        if (q.get('clean') === '1' || q.get('demo') === '1') document.querySelector('.menubar').style.display = 'none';
+        if (q.get('demo') === '1') {
+          Object.assign(fw.style, { width: '34%', height: '30%', left: '7%', top: '20%' });
+          send();
+        }
         if (q.get('nowin') === '1' || q.get('clean') === '1') {
           fw.style.display = 'none';
           api._fireWindows([]);
