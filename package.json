@@ -12,7 +12,7 @@
     "dev": "electron . --dev",
     "preview": "node scripts/serve-preview.js",
     "icons": "node scripts/make-assets.js",
-    "dist:mac": "bash scripts/build-helper.sh && electron-builder --mac",
+    "dist:mac": "bash scripts/build-helper.sh && electron-builder --mac --publish never",
     "dist:win": "electron-builder --win",
     "dist": "bash scripts/build-helper.sh && electron-builder --mac --win",
     "helper": "bash scripts/build-helper.sh"
@@ -59,10 +59,8 @@
           ]
         }
       ],
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
         "LSUIElement": true
       },
@@ -77,7 +75,10 @@
       ],
       "binaries": [
         "build/bin/window-watcher"
-      ]
+      ],
+      "identity": "-",
+      "notarize": false,
+      "artifactName": "Desk-Diorama-${version}-${arch}.${ext}"
     },
     "dmg": {
       "title": "Desk Diorama",
@@ -92,7 +93,8 @@
           "type": "link",
           "path": "/Applications"
         }
-      ]
+      ],
+      "artifactName": "Desk-Diorama-${version}-${arch}.${ext}"
     },
     "win": {
       "icon": "build/icon.png",
@@ -103,6 +105,7 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false
-    }
+    },
+    "publish": null
   }
 }
