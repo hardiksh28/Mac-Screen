@@ -42,6 +42,10 @@ Live, interactive wallpapers for macOS. Snowballs roll onto your Dock and stack 
 
 Other details: menu-bar app (no Dock icon), multiple displays, pauses on battery and when the screen locks, 30/60 fps setting, open at login, <kbd>⌥⌘D</kbd> hides the toys, and all sound effects are synthesized in code (no audio files).
 
+## Painted wallpapers
+
+Each theme can show a painted illustration (like the reference videos) with live animation on top. The app finds the lit windows and lamps and makes them flicker, puts twinkling stars only in dark sky, and adds snowfall, sparkles, rain or bubbles. Put the images in `assets/wallpapers/` as `<theme>-<scene>.jpg`; prompts and rules are in **[docs/ART_PROMPTS.md](docs/ART_PROMPTS.md)**. Without an image, a theme uses its illustrated (code-drawn) version. Pro users can also pick **their own picture** and get the same animated treatment.
+
 ## Run it
 
 ```bash
@@ -76,6 +80,9 @@ export APPLE_TEAM_ID="TEAMID"
 ```
 
 ## Payments (Dodo Payments)
+
+Step-by-step dashboard setup: **[docs/DODO_SETUP.md](docs/DODO_SETUP.md)**.
+
 
 1. In the Dodo dashboard, create a **one-time product** priced at **$1** and turn on **License keys** for it. Set the activation limit to 2–3 devices.
 2. Put the product ID in `src/main/config.js` (`PRODUCT_ID`), or build with `DD_DODO_PRODUCT_ID=pdt_xxx`.

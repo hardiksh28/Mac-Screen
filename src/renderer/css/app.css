@@ -519,3 +519,14 @@ code {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.scene-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 12px;
+}
+.chip.small {
+  padding: 4px 10px;
+  font-size: 12px;
+}

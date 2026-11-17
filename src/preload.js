@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('diorama', {
   tryTheme: (id) => ipcRenderer.invoke('theme:try', id),
   saveDecorations: (list) => ipcRenderer.send('decor:save', list),
   setDecorating: (on) => ipcRenderer.invoke('decor:edit', !!on),
+  setScene: (themeId, sceneId) => ipcRenderer.invoke('scene:set', themeId, sceneId),
+  pickWallpaper: () => ipcRenderer.invoke('wallpaper:pick'),
   openCheckout: () => ipcRenderer.invoke('checkout:open'),
   activateLicense: (key) => ipcRenderer.invoke('license:activate', key),
   deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),

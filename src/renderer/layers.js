@@ -10,6 +10,7 @@
     if (!api.onState) return;
     api.onState((next) => {
       if (next.theme !== state.theme || next.pro !== state.pro || !!next.decorating !== !!state.decorating) return onReload();
+      if (stage.role === 'wallpaper' && next.scene && state.scene && next.scene.url !== state.scene.url) return onReload();
       DD.sound.enabled = next.settings.sound;
       stage.paused = !!next.paused;
       if (next.settings.fps && stage.role === 'wallpaper') stage.fps = next.settings.fps;
@@ -28,7 +29,10 @@
     stage.role = 'wallpaper';
     stage.paused = !!state.paused;
     const env = { stage, state, util: DD.util };
-    const bg = theme.background(env);
+    // painted artwork if available (assets/wallpapers or the user's own picture), else drawn in code
+    const sceneUrl = opts.sceneUrl !== undefined ? opts.sceneUrl : state.scene && state.scene.url;
+    const analysis = opts.sceneUrl !== undefined ? null : state.scene && state.scene.analysis;
+    const bg = (sceneUrl && (await DD.paintedBackground(env, sceneUrl, themeId, analysis))) || theme.background(env);
     stage.onFrame = (dt, t) => {
       bg.frame(dt, t);
       if (state.isPrimary !== false && !state.decorating && DD.decor) DD.decor.drawAll(stage.ctx, state.settings.decorations, t);

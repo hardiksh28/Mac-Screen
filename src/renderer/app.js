@@ -45,6 +45,24 @@
           <div class="row" style="margin-top:0"></div>
         </div>`;
       const row = el.querySelector('.row');
+      // painted scenes for this theme
+      const avail = (state.sceneOptions && state.sceneOptions[t.id]) || [];
+      const current = active && state.scene ? state.scene.id : (s.scenes || {})[t.id] || avail[0] || 'drawn';
+      const opts = (t.scenes || []).filter((sc) => avail.includes(sc.id)).map((sc) => ({ id: sc.id, label: sc.label }));
+      opts.push({ id: 'drawn', label: 'Illustrated' });
+      if (state.hasCustomWallpaper) opts.push({ id: 'custom', label: 'My picture' });
+      if (opts.length > 1 && usable) {
+        const chips = document.createElement('div');
+        chips.className = 'scene-chips';
+        opts.forEach((o) => {
+          const c = document.createElement('button');
+          c.className = 'chip small' + (o.id === current ? ' on' : '');
+          c.textContent = o.label;
+          c.onclick = () => api.setScene(t.id, o.id);
+          chips.appendChild(c);
+        });
+        el.querySelector('.body').insertBefore(chips, row);
+      }
       const b = document.createElement('button');
       b.className = 'btn' + (active ? '' : ' primary');
       b.textContent = active ? 'In use' : usable ? 'Use this theme' : 'Try it for 90 seconds';
@@ -64,6 +82,7 @@
       grid.appendChild(el);
     });
 
+    $('#pickWallpaper').textContent = state.pro ? (state.hasCustomWallpaper ? '🖼️ Change my picture…' : '🖼️ Use my own picture…') : '🖼️ Use my own picture (Pro)';
     // weather
     const w = Object.assign({}, CAT.defaultWeather, s.weather);
     const wt = $('#weatherTypes');
@@ -130,6 +149,7 @@
   $('#clearSnow').onclick = () => api.triggerAction('clear-snow');
   $('#blizzard').onclick = () => api.triggerAction('blizzard');
   $('#startDecorating').onclick = () => api.setDecorating(true);
+  $('#pickWallpaper').onclick = () => api.pickWallpaper();
   $('#quitBtn').onclick = () => api.quit();
   $('#buyBtn').onclick = () => api.openCheckout();
   $('#activateBtn').onclick = async () => {

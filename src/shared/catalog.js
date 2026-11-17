@@ -14,6 +14,11 @@
         free: true,
         overlayFull: false,
         action: 'Call Santa’s sleigh',
+        scenes: [
+          { id: 'night', label: 'Moonlit village' },
+          { id: 'golden', label: 'Golden hour' },
+          { id: 'cabin', label: 'Cozy cabin' }
+        ],
         tips: [
           'Drag a snowball onto another one to stack it',
           'Stack three to build a snowman',
@@ -29,6 +34,7 @@
         free: false,
         overlayFull: true,
         action: 'Send the owl',
+        scenes: [{ id: 'castle', label: 'Castle by the lake' }],
         tips: [
           'Your cursor leaves a trail of sparks',
           'Click the owl to send it off for mail',
@@ -44,6 +50,7 @@
         free: false,
         overlayFull: false,
         action: 'Go for a cruise',
+        scenes: [{ id: 'city', label: 'Neon city' }],
         tips: [
           'Click the car to honk',
           'Throw it at the ramp and watch it flip',
@@ -59,6 +66,7 @@
         free: false,
         overlayFull: false,
         action: 'Feed the fish',
+        scenes: [{ id: 'reef', label: 'Sunlit reef' }],
         tips: [
           'Click the food shaker to feed your fish',
           'Fish swim away from fast cursor moves',

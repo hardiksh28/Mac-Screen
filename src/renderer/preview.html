@@ -185,6 +185,7 @@
     <script src="themes/wizard.js"></script>
     <script src="themes/drive.js"></script>
     <script src="themes/ocean.js"></script>
+    <script src="painted.js"></script>
     <script src="weather.js"></script>
     <script src="decor.js"></script>
     <script src="layers.js"></script>
@@ -205,7 +206,7 @@
         });
         document.getElementById('act').textContent = DD_CATALOG.get(theme).action;
         const api = DD._mock = DD.mockApi();
-        await DD.startWallpaper(document.getElementById('wall'), { api, theme, fps: 60 });
+        await DD.startWallpaper(document.getElementById('wall'), { api, theme, fps: 60, sceneUrl: q.get('art') || null });
         const o = await DD.startOverlay(document.getElementById('toys'), { api, theme });
         window.__overlay = o;
         document.getElementById('act').onclick = () => api._fireAction('surprise');

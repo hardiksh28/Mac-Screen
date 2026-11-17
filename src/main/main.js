@@ -8,14 +8,17 @@ const {
   shell,
   nativeImage,
   powerMonitor,
-  globalShortcut
+  globalShortcut,
+  dialog
 } = require('electron');
+const { pathToFileURL } = require('url');
 const fs = require('fs');
 const path = require('path');
 const catalog = require('../shared/catalog');
 const license = require('./license');
 const config = require('./config');
 const windowWatcher = require('./windows');
+const art = require('./art');
 
 const isMac = process.platform === 'darwin';
 const DEV = process.argv.includes('--dev');
@@ -36,8 +39,41 @@ const DEFAULTS = {
   onboarded: false,
   themeState: {},
   weather: { ...catalog.defaultWeather },
-  decorations: []
+  decorations: [],
+  scenes: {},
+  customWallpaper: null
 };
+const WALLPAPER_DIR = path.join(__dirname, '..', '..', 'assets', 'wallpapers');
+const IMG_EXT = ['jpg', 'jpeg', 'png', 'webp'];
+/* Painted scenes that actually have artwork in assets/wallpapers/<theme>-<scene>.<ext> */
+function sceneFile(themeId, sceneId) {
+  for (const ext of IMG_EXT) {
+    const f = path.join(WALLPAPER_DIR, `${themeId}-${sceneId}.${ext}`);
+    if (fs.existsSync(f)) return f;
+  }
+  return null;
+}
+function availableScenes(themeId) {
+  return (catalog.get(themeId).scenes || []).filter((sc) => sceneFile(themeId, sc.id)).map((sc) => sc.id);
+}
+function customFile() {
+  return settings.customWallpaper && fs.existsSync(settings.customWallpaper) ? settings.customWallpaper : null;
+}
+function resolveScene(themeId) {
+  const want = (settings.scenes || {})[themeId];
+  const avail = availableScenes(themeId);
+  const withArt = (id, file, bust) => {
+    let analysis = null;
+    try {
+      analysis = art.analyse(file);
+    } catch {}
+    return { id, url: pathToFileURL(file).href + (bust ? '?v=' + Math.round(fs.statSync(file).mtimeMs) : ''), analysis };
+  };
+  if (want === 'custom' && pro && customFile()) return withArt('custom', customFile(), true);
+  if (want === 'drawn') return { id: 'drawn', url: null };
+  const id = avail.includes(want) ? want : avail[0];
+  return id ? withArt(id, sceneFile(themeId, id)) : { id: 'drawn', url: null };
+}
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 let settings = { ...DEFAULTS };
 function loadSettings() {
@@ -97,6 +133,9 @@ function publicState(role, win) {
     decorating,
     isPrimary: !win || win.__primary !== false,
     windowSnow: windowWatcher.available(),
+    scene: resolveScene(activeTheme()),
+    sceneOptions: Object.fromEntries(catalog.themes.map((t) => [t.id, availableScenes(t.id)])),
+    hasCustomWallpaper: !!customFile(),
     groundInset: bottomInset > 0 ? bottomInset : 6,
     platform: process.platform,
     version: app.getVersion(),
@@ -309,7 +348,7 @@ function setDecorating(on) {
 
 /* ------------------------------------------------------------------ settings side effects */
 function setSetting(key, value) {
-  if (!(key in DEFAULTS) || key === 'themeState' || key === 'decorations') return;
+  if (!(key in DEFAULTS) || ['themeState', 'decorations', 'scenes', 'customWallpaper'].includes(key)) return;
   const prev = settings[key];
   if (key === 'weather') {
     const next = { ...settings.weather, ...(value || {}) };
@@ -517,6 +556,33 @@ ipcMain.on('decor:save', (_e, list) => {
   saveSettings();
 });
 ipcMain.handle('decor:edit', (_e, on) => setDecorating(!!on));
+ipcMain.handle('scene:set', (_e, themeId, sceneId) => {
+  if (!catalog.themes.some((t) => t.id === themeId)) return;
+  if (sceneId === 'custom' && !pro) return openApp('pro');
+  settings.scenes = { ...settings.scenes, [themeId]: String(sceneId) };
+  saveSettings();
+  if (themeId !== activeTheme() && canUse(themeId)) settings.theme = themeId;
+  reloadLayers();
+});
+ipcMain.handle('wallpaper:pick', async (e) => {
+  if (!pro) return openApp('pro');
+  const r = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), {
+    title: 'Choose a wallpaper picture',
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: IMG_EXT }]
+  });
+  if (r.canceled || !r.filePaths[0]) return;
+  const ext = path.extname(r.filePaths[0]).toLowerCase() || '.jpg';
+  const dest = path.join(app.getPath('userData'), 'custom-wallpaper' + ext);
+  try {
+    if (customFile() && customFile() !== dest) fs.unlinkSync(customFile());
+  } catch {}
+  fs.copyFileSync(r.filePaths[0], dest);
+  settings.customWallpaper = dest;
+  settings.scenes = { ...settings.scenes, [activeTheme()]: 'custom' };
+  saveSettings();
+  reloadLayers();
+});
 ipcMain.handle('checkout:open', () => {
   shell.openExternal(config.checkoutUrl());
   return { configured: config.isConfigured() };
