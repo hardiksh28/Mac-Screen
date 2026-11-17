@@ -234,6 +234,11 @@ function createOverlay() {
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(RENDERER, 'overlay.html'));
   win.once('ready-to-show', () => win.showInactive());
+  // A reloading page forgets that it was catching the mouse, so always go back to
+  // click-through; otherwise the invisible layer would block every click on screen.
+  win.webContents.on('did-start-loading', () => {
+    if (!win.isDestroyed()) win.setIgnoreMouseEvents(true, { forward: true });
+  });
   // a fresh page needs the latest windows / Dock / away info
   win.webContents.on('did-finish-load', () => setTimeout(resendWindows, 300));
   return win;
@@ -325,14 +330,15 @@ function openApp(section) {
     return;
   }
   appWin = new BrowserWindow({
-    width: 1040,
-    height: 720,
-    minWidth: 860,
-    minHeight: 600,
+    width: 1120,
+    height: 780,
+    minWidth: 920,
+    minHeight: 640,
     title: 'Desk Diorama',
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 18, y: 18 },
-    backgroundColor: '#0d0f1c',
+    // translucent sidebar on macOS
+    ...(isMac ? { vibrancy: 'sidebar', visualEffectState: 'active', backgroundColor: '#00000000' } : { backgroundColor: '#0c0e1b' }),
     show: false,
     webPreferences: commonPrefs()
   });

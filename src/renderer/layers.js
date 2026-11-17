@@ -124,6 +124,7 @@
     /* -------- pointer routing: click-through everywhere except over toys and panels -------- */
     let interactive = false;
     let down = null; // { ent, x, y, dragging }
+    api.setInteractive && api.setInteractive(false); // start click-through, whatever the last page left behind
     function setInteractive(v) {
       if (v === interactive) return;
       interactive = v;

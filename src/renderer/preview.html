@@ -206,6 +206,12 @@
         });
         document.getElementById('act').textContent = DD_CATALOG.get(theme).action;
         const api = DD._mock = DD.mockApi();
+        // used by the app window's live preview: mirror the user's weather, stay quiet
+        if (q.get('weather')) {
+          const st = await api.getState();
+          await api.setSetting('weather', Object.assign({}, st.settings.weather, { type: q.get('weather'), amount: q.get('amount') || st.settings.weather.amount, paused: false }));
+        }
+        if (q.get('mute') === '1') DD.sound.play = () => {};
         await DD.startWallpaper(document.getElementById('wall'), { api, theme, fps: 60, sceneUrl: q.get('art') || null });
         const o = await DD.startOverlay(document.getElementById('toys'), { api, theme });
         window.__overlay = o;
