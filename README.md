@@ -1,5 +1,7 @@
 # Desk Diorama
 
+**Website:** https://macscreen.vercel.app
+
 Live, interactive wallpapers for macOS. Snowballs roll onto your Dock and stack into snowmen you can dress up. Snow falls over your screen and **piles up on top of your windows**. Your cursor blows it around, and shaking the cursor starts a blizzard. You can deck your desktop with lights and a tree, send Santa, a snowplough or a yeti, and switch to a wizard castle, a neon night drive or a coral reef.
 
 **Price:** free to try, **$1 lifetime** for everything (Dodo Payments license key).
@@ -14,7 +16,7 @@ Live, interactive wallpapers for macOS. Snowballs roll onto your Dock and stack 
 
 - **Snowy Village:** moonlit village, snowfall, chimney smoke, shooting stars.
   - Snowballs drop onto the Dock. Drag one onto another to stack them; three make a snowman (if you leave them alone, they build one themselves).
-  - Double-click a snowman for the *"Fashion week, but colder."* panel: hat, face, body and clothes, 32 items in all.
+  - Click a snowman for the *"Fashion week, but colder."* panel: hat, face, body and clothes, 32 items in all. **Double-click to smash it** into snowballs you can stack again.
   - Santa flies by and drops gifts. Clicking a gift gives a snowman a new outfit.
   - **Send:** Santa, snowmen, a snowplough (clears the snow off the Dock and pushes snowballs) or a yeti (waves and stomps).
 - **Wizard Academy:** castle on a cliff, floating candles, aurora and a broom rider. Your cursor leaves a wand trail. The mail owl brings letters with fortunes, the cauldron brews random spells, and the spellbook offers 8 spells, 8 wand trails, 8 owls and 8 potions.
@@ -29,7 +31,7 @@ Live, interactive wallpapers for macOS. Snowballs roll onto your Dock and stack 
 - **Stays out of your way:** while you're working in an app, the snowmen and snow fade out and come back when you click the desktop. Turn on **Stay visible over apps** (Settings or the menu bar) to keep them on screen all the time.
 - The cursor pushes flakes around. **Shake the cursor** for a blizzard.
 
-**Deck your screen:** a tree, string lights (drag the ends to stretch), baubles, a star, wreath, stocking, candy cane, gifts, bells, gingerbread, holly, Santa hat, snow globe, cocoa and a snowman. They sit on the desktop **behind your windows**. Planting a tree turns the snow on.
+**Deck your screen:** a big Christmas tree you decorate (baubles, tinsel, tree lights, bows and the star hang on its branches; drag them off again), string lights (drag the ends to stretch), baubles, a star, wreath, stocking, candy cane, gifts, bells, gingerbread, holly, Santa hat, snow globe, cocoa and a snowman. They sit on the desktop **behind your windows**. Planting a tree turns the snow on.
 
 **Free vs Pro ($1 lifetime)**
 
@@ -82,6 +84,16 @@ export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 export APPLE_TEAM_ID="TEAMID"
 ```
+
+## Gift keys (free Pro unlocks you hand out)
+
+Besides Dodo purchase keys, the app accepts **gift keys** (`DDGIFT-…`), checked offline with a public key built into the app. Make them with:
+
+```bash
+DD_GIFT_KEY_FILE=/path/to/desk-diorama-gift-private.pem node scripts/make-gift-key.js 5
+```
+
+Keep the private key file secret and out of git: whoever has it can make unlimited keys.
 
 ## Payments (Dodo Payments)
 

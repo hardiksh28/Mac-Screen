@@ -197,6 +197,12 @@
     };
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', up);
+    // right-click (or two-finger click) on a toy opens its customise panel
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const ent = pick(e.clientX, e.clientY);
+      if (ent && ent.onContext) ent.onContext(e.clientX, e.clientY);
+    });
     canvas.addEventListener('dblclick', (e) => {
       const ent = pick(e.clientX, e.clientY);
       if (ent && ent.onDblClick) ent.onDblClick(e.clientX, e.clientY);

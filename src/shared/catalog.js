@@ -22,7 +22,7 @@
         tips: [
           'Drag a snowball onto another one to stack it',
           'Stack three to build a snowman',
-          'Double-click a snowman to dress it up',
+          'Click a snowman to dress it up, double-click to smash it',
           'Click the gifts Santa drops'
         ]
       },
@@ -38,8 +38,9 @@
         tips: [
           'Your cursor leaves a trail of sparks',
           'Click the owl to send it off for mail',
-          'Click the cauldron to brew a random spell',
-          'Open the spellbook to pick spells, wand trails and owls'
+          'Click the cauldron to brew a random spell, double-click to blow it up',
+          'Double-click the owl to startle it',
+          'Right-click the owl or cauldron (or click the book) for the spellbook'
         ]
       },
       {
@@ -55,7 +56,8 @@
           'Click the car to honk',
           'Throw it at the ramp and watch it flip',
           'Knock over the traffic cones',
-          'Double-click the car to open the garage'
+          'Double-click the car to blow it up 💥',
+          'Right-click the car to open the garage'
         ]
       },
       {
@@ -71,7 +73,9 @@
           'Click the food shaker to feed your fish',
           'Fish swim away from fast cursor moves',
           'Open the treasure chest to find a new fish',
-          'Double-click a fish to manage your tank'
+          'Double-click a fish for a turbo dash, or pop the puffer',
+          'Double-click the shaker for a feeding frenzy',
+          'Right-click a fish to manage your tank'
         ]
       }
     ],

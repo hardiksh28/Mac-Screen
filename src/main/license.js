@@ -10,6 +10,7 @@ const os = require('os');
 const path = require('path');
 const { app, safeStorage } = require('electron');
 const config = require('./config');
+const giftkey = require('./giftkey');
 
 const file = () => path.join(app.getPath('userData'), 'license.dat');
 const REVALIDATE_MS = 1000 * 60 * 60 * 24 * 3; // every 3 days
@@ -77,6 +78,13 @@ module.exports = {
   async activate(rawKey) {
     const key = String(rawKey || '').trim();
     if (key.length < 8) return { ok: false, error: 'Paste the license key from your purchase email.' };
+    // gift keys are checked right here, offline
+    if (giftkey.looksLikeGift(key)) {
+      const g = giftkey.verify(key, config.GIFT_PUBLIC_KEY);
+      if (!g) return { ok: false, error: 'That gift key isn’t valid. Check that you copied all of it.' };
+      write({ key: key.replace(/\s+/g, ''), gift: true, serial: g.serial, activatedAt: Date.now(), checkedAt: Date.now(), valid: true });
+      return { ok: true };
+    }
     try {
       const name = `${os.hostname()} (${process.platform})`.slice(0, 120);
       // try the configured environment first, then the other one (a test key won't exist in live and vice versa)
@@ -111,6 +119,7 @@ module.exports = {
   async revalidate(force = false) {
     const l = read();
     if (!l || !l.key) return false;
+    if (l.gift) return !!giftkey.verify(l.key, config.GIFT_PUBLIC_KEY);
     if (!force && Date.now() - (l.checkedAt || 0) < REVALIDATE_MS) return true;
     try {
       const body = { license_key: l.key };

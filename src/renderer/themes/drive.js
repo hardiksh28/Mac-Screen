@@ -627,7 +627,8 @@
       kind: 'car'
     };
     const halfW = 50;
-    C.pick = (px, py) => Math.abs(px - C.x) < halfW + 6 && py > C.y - 60 && py < C.y + 6;
+    C.wreck = 0; // seconds until a fresh car drives in after a crash
+    C.pick = (px, py) => !C.wreck && Math.abs(px - C.x) < halfW + 6 && py > C.y - 60 && py < C.y + 6;
     C.bubbleAnchor = () => ({ x: C.x, y: C.y - 64 });
     C.onGrab = () => {
       C.held = true;
@@ -647,13 +648,61 @@
       if (Math.abs(vx) > 30) C.dir = Math.sign(vx);
       dirty = true;
     };
-    C.onClick = () => {
-      DD.sound.play('honk');
-      C.flash = 1;
-      if (C.onGround) C.vy = -260;
-      DD.bubbles.say(C, U.pick(['Beep beep!', 'Vroom!', 'Road trip?', 'Honk honk!']), 1.6);
-    };
-    C.onDblClick = () => openGarage();
+    // click: honk · double-click: KABOOM · right-click: garage
+    C.onClick = DD.clicks(
+      () => {
+        DD.sound.play('honk');
+        C.flash = 1;
+        if (C.onGround) C.vy = -260;
+        DD.bubbles.say(C, U.pick(['Beep beep!', 'Vroom!', 'Road trip?', 'Honk honk!']), 1.6);
+      },
+      () => explode()
+    );
+    C.onDblClick = () => {};
+    C.onContext = () => openGarage();
+
+    function explode() {
+      if (C.wreck) return;
+      DD.panel.close();
+      const x = C.x,
+        y = C.y - 20;
+      DD.sound.play('boom');
+      setTimeout(() => DD.sound.play('crunch'), 120);
+      // fireball
+      P.burst(x, y, 46, () => ({
+        vx: U.rand(-380, 380),
+        vy: U.rand(-520, -60),
+        g: 700,
+        drag: 1.2,
+        life: U.rand(0.5, 1.1),
+        shrink: true,
+        draw: DD.paint.circle(U.pick(['#fff3b0', '#ffd34d', '#ff8a3d', '#ff4d2e']), U.rand(2.5, 6))
+      }));
+      // smoke
+      for (let i = 0; i < 16; i++)
+        P.add({ x: x + U.rand(-30, 30), y: y + U.rand(-10, 10), vx: U.rand(-60, 60), vy: U.rand(-120, -40), life: U.rand(1.2, 2), alpha: 0.5, draw: DD.paint.sprite(smokeImg, U.rand(26, 44)) });
+      // the wheels and bits fly off
+      for (let i = 0; i < 4; i++) {
+        const wx = x + (i < 2 ? -30 : 30);
+        P.add({ x: wx, y: C.y - 8, vx: (i < 2 ? -1 : 1) * U.rand(160, 320), vy: U.rand(-700, -400), g: 1600, life: 1.8, draw: DD.paint.circle('#151515', 8) });
+      }
+      for (let i = 0; i < 10; i++)
+        P.add({ x, y, vx: U.rand(-420, 420), vy: U.rand(-650, -250), g: 1600, life: 1.6, draw: DD.paint.confetti(U.pick([car.paint || '#e23b3b', '#cfd6e6', '#333'])) });
+      env.stage.shake && env.stage.shake(10);
+      C.wreck = 2.6;
+      C.mode = 'idle';
+      C.vx = C.vy = 0;
+      // knock everything nearby over
+      for (const c of cones) {
+        const d = c.x - x;
+        if (Math.abs(d) < 220) {
+          c.vx = Math.sign(d || 1) * U.rand(300, 600);
+          c.vy = -U.rand(400, 700);
+          c.va = Math.sign(d || 1) * U.rand(10, 20);
+        }
+      }
+      DD.bubbles.say({ bubbleAnchor: () => ({ x, y: y - 40 }) }, '💥', 1.2);
+    }
 
     /* ---------------- ramp & cones ---------------- */
     const ramp = DD.prop({
@@ -780,6 +829,25 @@
     /* ---------------- car physics ---------------- */
     function updateCar(dt) {
       C.flash = Math.max(0, C.flash - dt * 2.5);
+      if (C.wreck) {
+        C.wreck = Math.max(0, C.wreck - dt);
+        if (!C.wreck) {
+          // a brand-new car rolls in from the edge of the screen
+          const fromLeft = Math.random() < 0.5;
+          C.x = fromLeft ? halfW : W() - halfW;
+          C.dir = fromLeft ? 1 : -1;
+          C.vx = C.dir * 380;
+          C.y = ground();
+          C.ang = 0;
+          C.va = 0;
+          C.onGround = true;
+          C.mode = 'idle';
+          C.modeT = U.rand(5, 9);
+          DD.sound.play('rev');
+          setTimeout(() => DD.bubbles.say(C, U.pick(['Good as new!', 'Insurance covered it.', 'Round two!']), 1.8), 900);
+        }
+        return;
+      }
       if (C.held) {
         C.wheelRot += dt * 20;
         return;
@@ -877,6 +945,14 @@
     }
 
     function drawCarEnt(g) {
+      if (C.wreck) {
+        // smouldering scorch mark while the next car is on its way
+        g.fillStyle = `rgba(20,14,10,${Math.min(0.55, C.wreck * 0.4)})`;
+        g.beginPath();
+        g.ellipse(C.x, ground(), 60, 6, 0, 0, TAU);
+        g.fill();
+        return;
+      }
       g.save();
       g.translate(C.x, C.y);
       g.translate(0, -18);

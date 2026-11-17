@@ -628,14 +628,39 @@
       const f = { kind, x: x ?? U.rand(W() * 0.3, W() * 0.7), y: y ?? ground() - U.rand(40, BAND - 20), vx: U.rand(-40, 40), vy: 0, dir: 1, t: U.rand(9), tx: 0, ty: 0, retarget: 0, puff: 0, scale: 1.35, flip: 0 };
       f.pick = (px, py) => U.dist(px, py, f.x, f.y) < FISH[kind].len * 0.6 * f.scale + 6;
       f.bubbleAnchor = () => ({ x: f.x, y: f.y - 24 });
-      f.onClick = () => {
-        DD.sound.play('bubble');
-        if (FISH[kind].puffer) f.puff = 1;
-        else f.flip = 1;
-        f.vx += f.dir * 200;
-        P.burst(f.x, f.y, 6, () => ({ vx: U.rand(-20, 20), vy: U.rand(-90, -40), life: 1.2, draw: bubbleDraw(U.rand(2, 4)) }));
-      };
-      f.onDblClick = () => openTank(f.x, f.y);
+      // click: a flip · double-click: turbo dash (the puffer pops!) · right-click: tank
+      f.onClick = DD.clicks(
+        () => {
+          DD.sound.play('bubble');
+          if (FISH[kind].puffer) f.puff = 1;
+          else f.flip = 1;
+          f.vx += f.dir * 200;
+          P.burst(f.x, f.y, 6, () => ({ vx: U.rand(-20, 20), vy: U.rand(-90, -40), life: 1.2, draw: bubbleDraw(U.rand(2, 4)) }));
+        },
+        () => {
+          if (FISH[kind].puffer) {
+            // POP: a cloud of bubbles and a deflating spin
+            f.puff = 0;
+            f.flip = 1;
+            f.vx = U.rand(-500, 500);
+            f.vy = -260;
+            DD.sound.play('pop');
+            setTimeout(() => DD.sound.play('splash'), 80);
+            P.burst(f.x, f.y, 40, () => ({ vx: U.rand(-260, 260), vy: U.rand(-260, 60), drag: 1.5, life: U.rand(1, 2), draw: bubbleDraw(U.rand(2, 6)) }));
+            env.stage.shake && env.stage.shake(4);
+            DD.bubbles.say(f, U.pick(['Pfffft!', 'I deflate.', 'Whoops!']), 1.6);
+          } else {
+            // turbo: zoom off with a bubble trail
+            f.turbo = 1.2;
+            f.dir = Math.random() < 0.5 ? -1 : 1;
+            f.vx = f.dir * 900;
+            DD.sound.play('whoosh');
+            DD.bubbles.say(f, U.pick(['Zoom!', 'Turbo fins!', 'Can’t catch me!']), 1.2);
+          }
+        }
+      );
+      f.onDblClick = () => {};
+      f.onContext = () => openTank(f.x, f.y);
       f.onGrab = () => (f.held = true);
       f.onDrag = (px, py) => {
         f.x = px;
@@ -649,6 +674,16 @@
       };
       f.update = (dt) => {
         f.t += dt;
+        if (f.turbo > 0) {
+          f.turbo -= dt;
+          f.x += f.vx * dt;
+          if (Math.random() < 0.8) P.add({ x: f.x - f.dir * 20, y: f.y + U.rand(-4, 4), vx: -f.dir * 40, vy: U.rand(-60, -20), life: 1, draw: bubbleDraw(U.rand(1.5, 3)) });
+          // wrap around the screen
+          if (f.x > W() + 40) f.x = -40;
+          if (f.x < -40) f.x = W() + 40;
+          if (f.turbo <= 0) f.vx = f.dir * 60;
+          return;
+        }
         f.puff = Math.max(0, f.puff - dt * 0.35);
         f.flip = Math.max(0, f.flip - dt * 1.5);
         if (f.held) return;
@@ -764,10 +799,18 @@
         U.rrect(g, -9, -40, 18, 9, 3);
         g.fill();
       },
-      onClick: () => feed(),
+      // click: a pinch of food · double-click: feeding frenzy
+      onClick: DD.clicks(() => feed(), () => frenzy()),
       onRelease: () => (dirty = true),
       onLand: () => DD.sound.play('thud')
     });
+    function frenzy() {
+      shaker.vy = -500;
+      shaker.tilt = 0.6;
+      DD.sound.play('splash');
+      for (let i = 0; i < 60; i++) flakes.push({ x: U.rand(40, W() - 40), y: ground() - BAND - U.rand(0, 120), vy: U.rand(18, 40), p: U.rand(TAU), c: U.pick(['#ffb347', '#ff7a5a', '#ffe08a', '#a6ff8a']) });
+      for (const f of fishes) DD.bubbles.say(f, U.pick(['FOOD!', 'Mine!', 'Nom nom!', '!!!']), 1.4);
+    }
     function feed() {
       shaker.squash = 0.2;
       DD.sound.play('splash');
@@ -788,25 +831,46 @@
         kind: 'decor',
         open: 0,
         draw: (g, p) => drawDecor(g, kind, st.time, p.open),
-        onDblClick: () => openTank(d.x, d.y - 40),
+        onDblClick: () => {},
+        onContext: () => openTank(d.x, d.y - 40),
         onRelease: () => {
           decorPos[kind] = Math.round(d.x);
           dirty = true;
         },
         onLand: () => DD.sound.play('thud')
       });
-      d.onClick = () => {
-        if (kind === 'chest') openChest(d);
-        else {
-          d.squash = 0.15;
-          DD.sound.play('bubble');
-          P.burst(d.x, d.y - d.h, 10, () => ({ vx: U.rand(-30, 30), vy: U.rand(-120, -50), life: 1.6, draw: bubbleDraw(U.rand(2, 5)) }));
-        }
-      };
+      // click: open / bubble · double-click: bubble geyser that sends the fish flying
+      d.onClick = DD.clicks(
+        () => {
+          if (kind === 'chest') openChest(d);
+          else {
+            d.squash = 0.15;
+            DD.sound.play('bubble');
+            P.burst(d.x, d.y - d.h, 10, () => ({ vx: U.rand(-30, 30), vy: U.rand(-120, -50), life: 1.6, draw: bubbleDraw(U.rand(2, 5)) }));
+          }
+        },
+        () => geyser(d)
+      );
       return d;
     }
     Object.keys(DECOR).forEach((k, i) => (decor[k] = makeDecor(k, i)));
 
+    function geyser(d) {
+      d.squash = 0.25;
+      DD.sound.play('splash');
+      let n = 0;
+      const iv = setInterval(() => {
+        for (let i = 0; i < 8; i++) P.add({ x: d.x + U.rand(-14, 14), y: d.y - d.h, vx: U.rand(-40, 40), vy: U.rand(-520, -300), drag: 0.4, life: U.rand(1, 1.8), draw: bubbleDraw(U.rand(2, 7)) });
+        if (n % 3 === 0) DD.sound.play('bubble');
+        if (++n > 18) clearInterval(iv);
+      }, 60);
+      for (const f of fishes)
+        if (Math.abs(f.x - d.x) < 160) {
+          f.vy = -U.rand(300, 480);
+          f.vx += Math.sign(f.x - d.x || 1) * 160;
+          f.flip = 1;
+        }
+    }
     function openChest(d) {
       if (d.open > 0) return;
       d.open = 1;

@@ -880,8 +880,10 @@
         }
         drawOwl(g, cfg.owl, { t: st.time, look, blink: p.blink > 0, bob: Math.sin(st.time * 2) * 0.6, flying: p.held || p.state !== 'perch', letter: p.state === 'return' });
       },
-      onClick: () => sendOwl(),
-      onDblClick: () => openBook(),
+      // click: mail run · double-click: startle it · right-click: spellbook
+      onClick: DD.clicks(() => sendOwl(), () => startleOwl()),
+      onDblClick: () => {},
+      onContext: () => openBook(),
       onGrab: () => DD.sound.play('hoot'),
       onRelease: () => (dirty = true),
       onLand: () => DD.sound.play('thud')
@@ -925,6 +927,29 @@
       }
       if (Math.random() < 0.5) P.add({ x: owl.x, y: owl.y - 20, vx: U.rand(-20, 20), vy: U.rand(-10, 20), life: 0.9, shrink: true, draw: starP('#fff3c4', 2) });
     };
+    function startleOwl() {
+      if (owl.state !== 'perch') return;
+      DD.sound.play('hoot');
+      setTimeout(() => DD.sound.play('hoot'), 160);
+      // feathers everywhere
+      P.burst(owl.x, owl.y - 30, 30, () => ({
+        vx: U.rand(-260, 260),
+        vy: U.rand(-380, -60),
+        g: 140,
+        drag: 2.4,
+        life: U.rand(1.4, 2.4),
+        draw: (gg, p, t) => {
+          gg.rotate(Math.sin(t * 9 + p.x) * 0.9);
+          gg.fillStyle = U.pick(['#f3ead8', '#c9a77a', '#8a6a46']);
+          gg.beginPath();
+          gg.ellipse(0, 0, 5, 1.8, 0, 0, TAU);
+          gg.fill();
+        }
+      }));
+      owl.vy = -760;
+      owl.tilt = U.pick([-0.5, 0.5]);
+      DD.bubbles.say(owl, U.pick(['HOO?!', 'Rude!', 'My feathers!', 'Who-who did that?!']), 1.8);
+    }
     function sendOwl() {
       if (owl.state !== 'perch') return;
       DD.sound.play('hoot');
@@ -983,11 +1008,51 @@
       kind: 'cauldron',
       bubT: 0,
       draw: (g) => drawCauldron(g, POTIONS[cfg.potion].c, st.time),
-      onClick: () => brew(),
-      onDblClick: () => openBook(),
+      // click: brew · double-click: overload it · right-click: spellbook
+      onClick: DD.clicks(() => brew(), () => blowCauldron()),
+      onDblClick: () => {},
+      onContext: () => openBook(),
       onRelease: () => (dirty = true),
       onLand: () => DD.sound.play('thud')
     });
+    function blowCauldron() {
+      const c = POTIONS[cfg.potion].c;
+      const x = cauldron.x,
+        y = cauldron.y - 34;
+      DD.sound.play('boom');
+      setTimeout(() => DD.sound.play('magic'), 150);
+      // potion goo everywhere
+      P.burst(x, y, 50, () => ({
+        vx: U.rand(-420, 420),
+        vy: U.rand(-760, -200),
+        g: 1500,
+        life: U.rand(0.8, 1.5),
+        shrink: true,
+        draw: DD.paint.circle(U.pick([c, c, '#ffffff', U.shade(c, -0.3)]), U.rand(2.5, 6))
+      }));
+      // magic smoke ring
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * TAU;
+        P.add({ x, y, vx: Math.cos(a) * 220, vy: Math.sin(a) * 120 - 60, drag: 2.2, life: 1.2, shrink: true, draw: starP(U.pick(['#fff3c4', c, '#c9a6ff']), U.rand(3, 6)) });
+      }
+      // the cauldron gets blasted into the air
+      cauldron.vy = -900;
+      cauldron.vx = U.rand(-160, 160);
+      cauldron.tilt = U.rand(-0.5, 0.5);
+      env.stage.shake && env.stage.shake(9);
+      DD.bubbles.say(cauldron, U.pick(['Too much eye of newt!', 'Oops… wrong spell.', 'KA-BLAM!', 'Ten points from me.']), 2);
+      // and for a few seconds the sky rains the potion's colour as stars
+      let n = 0;
+      const rain = setInterval(() => {
+        for (let i = 0; i < 6; i++) P.add({ x: U.rand(0, W()), y: -10, vx: U.rand(-20, 20), vy: U.rand(120, 260), life: 6, shrink: false, draw: starP(U.pick([c, '#fff3c4']), U.rand(2, 4)) });
+        if (++n > 25) clearInterval(rain);
+      }, 120);
+      if (!saved.blowTip) {
+        saved.blowTip = true;
+        dirty = true;
+        DD.toast('🧪 Kaboom! Single-click brews, double-click overloads it.', 3600);
+      }
+    }
     const book = DD.prop({
       x: pos.book ?? W() / 2,
       w: 64,

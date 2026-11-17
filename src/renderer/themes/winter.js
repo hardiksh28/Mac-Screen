@@ -1534,14 +1534,25 @@
         m.vy = vy * 0.4;
         dirty = true;
       };
+      // one click: a hop and the wardrobe · double-click: smash it into snowballs
+      let clickTimer = null;
       m.onClick = () => {
-        m.squash = 0.18;
-        m.vy = -320;
-        DD.sound.play('giggle');
         idle = 0;
-        DD.bubbles.say(m, U.pick(LINES), 2.6);
+        if (clickTimer) {
+          clearTimeout(clickTimer);
+          clickTimer = null;
+          return smashSnowman(m);
+        }
+        m.squash = 0.18;
+        m.vy = -260;
+        DD.sound.play('giggle');
+        clickTimer = setTimeout(() => {
+          clickTimer = null;
+          if (ents.includes(m)) openOutfitPanel(m);
+        }, 300);
       };
-      m.onDblClick = () => openOutfitPanel(m);
+      m.onDblClick = () => {}; // handled by the second click above
+      m.onContext = () => openOutfitPanel(m);
       m.update = (dt) => {
         m.blinkT -= dt;
         if (m.blinkT < 0) {
@@ -1614,6 +1625,47 @@
         }
       };
       return m;
+    }
+
+    function smashSnowman(m) {
+      if (!ents.includes(m)) return;
+      if (editing === m) DD.panel.close();
+      const g = geom(m.s);
+      remove(m);
+      DD.sound.play('crunch');
+      setTimeout(() => DD.sound.play('thud'), 60);
+      // a burst of snow…
+      for (const cy of [g.cyB, g.cyM, g.cyH]) poof(m.x, m.y + cy, 22);
+      P.burst(m.x, m.y + g.cyM, 26, () => ({
+        vx: U.rand(-320, 320),
+        vy: U.rand(-520, -120),
+        g: 1500,
+        drag: 0.6,
+        life: U.rand(0.7, 1.3),
+        shrink: true,
+        draw: DD.paint.circle(U.pick(['#ffffff', '#eef3ff', '#dfe8ff']), U.rand(2, 5))
+      }));
+      // …a lump of coal and a carrot fly off…
+      P.add({ x: m.x, y: m.y + g.cyH, vx: U.rand(80, 200), vy: -420, g: 1500, life: 1.4, draw: DD.paint.circle('#2b2b33', 3 * m.s) });
+      P.add({ x: m.x, y: m.y + g.cyH, vx: U.rand(-200, -80), vy: -460, g: 1500, life: 1.4, draw: DD.paint.circle('#ff8a2a', 3.2 * m.s) });
+      // …and it leaves three snowballs to build it again
+      const parts = [
+        [g.rB * 0.82, g.cyB, -1],
+        [g.rM * 0.85, g.cyM, 1],
+        [g.rH * 0.9, g.cyH, 0]
+      ];
+      for (const [r, cy, dir] of parts) {
+        const b = Ball(m.x, m.y + cy, Math.max(9, Math.min(30, r)));
+        b.vx = (dir || U.rand(-1, 1)) * U.rand(140, 260);
+        b.vy = U.rand(-420, -220);
+        ents.push(b);
+      }
+      env.stage.shake && env.stage.shake(6);
+      dirty = true;
+      if (!localFlag('smashTip')) {
+        setFlag('smashTip');
+        DD.toast('💥 Smashed! Stack the snowballs again to rebuild it.', 3800);
+      }
     }
 
     /* ---------------- Gift ---------------- */
@@ -2105,7 +2157,7 @@
         DD.sound.play('jingle');
         DD.bubbles.say(m, U.pick(['Ta-da!', 'I’m alive!', 'Hello there!', 'Brrr, hi!']), 2.4);
         if (!localFlag('tipOutfit')) {
-          setTimeout(() => DD.toast('✨ Double-click your snowman to dress it up'), 1600);
+          setTimeout(() => DD.toast('✨ Click your snowman to dress it up (double-click smashes it!)'), 1600);
           setFlag('tipOutfit');
         }
       }

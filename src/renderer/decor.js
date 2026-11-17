@@ -9,11 +9,11 @@
   const TAU = Math.PI * 2;
 
   /* ---------------- art ---------------- */
-  function bauble(g, color, t, s) {
+  function bauble(g, color, t, s, onTree) {
     g.strokeStyle = 'rgba(220,220,230,0.8)';
     g.lineWidth = 1;
     g.beginPath();
-    g.moveTo(0, -40 * s);
+    g.moveTo(0, (onTree ? -20 : -40) * s);
     g.lineTo(0, -14 * s);
     g.stroke();
     g.fillStyle = '#d9b44a';
@@ -43,59 +43,206 @@
   }
   const BULBS = ['#ff4d6d', '#ffd34d', '#4dd2ff', '#7dff9b', '#c38bff', '#ff9a4d'];
 
+  /* ---------------- the Christmas tree (big, and you can decorate it) ---------------- */
+  // tree units (multiplied by the tree's scale): base at 0, top of the tip at TREE_TOP
+  const TIERS = [
+    [-18, 66],
+    [-52, 56],
+    [-84, 46],
+    [-114, 35],
+    [-140, 24]
+  ];
+  const TIER_H = 58;
+  const TREE_TOP = TIERS[TIERS.length - 1][0] - TIER_H;
+  function treeHalfWidth(v) {
+    let w = -1;
+    for (const [by, hw] of TIERS) {
+      const ay = by - TIER_H;
+      if (v <= by + 6 && v >= ay) w = Math.max(w, (hw * (v - ay)) / TIER_H);
+    }
+    return w;
+  }
+  // ornaments that can hang on the tree, and how they sit on it
+  const ON_TREE = {
+    redBauble: 'ball',
+    goldBauble: 'ball',
+    blueBauble: 'ball',
+    silverBauble: 'ball',
+    candy: 'thing',
+    bells: 'thing',
+    bow: 'thing',
+    gingerbread: 'thing',
+    holly: 'thing',
+    candle: 'thing',
+    star: 'top',
+    treeLights: 'garland',
+    tinsel: 'garland'
+  };
+  const ORN_SCALE = 0.62; // ornaments are drawn this size relative to the tree
+  // a decorated look for trees saved before ornaments existed
+  const LEGACY_ORN = [{ k: 'treeLights' }, { k: 'star' }];
+
+  function garlandPath(i, kind) {
+    // swags that wrap around the tree from one side to the other, tier by tier
+    const pts = [];
+    const levels = [-34, -66, -98, -126, -150].slice(0, kind === 'tinsel' ? 4 : 5);
+    levels.forEach((v0, j) => {
+      const v = v0 + i * 9 + (kind === 'tinsel' ? 12 : 0);
+      const dir = (j + i) % 2 ? 1 : -1;
+      const w1 = treeHalfWidth(v) * 0.92,
+        w2 = treeHalfWidth(v + 16) * 0.92;
+      pts.push([[-dir * w1, v], [dir * w2, v + 16]]);
+    });
+    return pts;
+  }
+  function drawGarland(g, i, kind, t) {
+    for (const [[x1, y1], [x2, y2]] of garlandPath(i, kind)) drawSwag(g, x1, y1, x2, y2, kind, t, i);
+  }
+  function drawSwag(g, x1, y1, x2, y2, kind, t, i = 0) {
+    {
+      const sag = 9;
+      const at = (u) => [U.lerp(x1, x2, u), U.lerp(y1, y2, u) + Math.sin(u * Math.PI) * sag];
+      if (kind === 'tinsel') {
+        g.lineWidth = 3.4;
+        g.lineCap = 'round';
+        for (let pass = 0; pass < 2; pass++) {
+          g.strokeStyle = pass ? 'rgba(255,255,255,0.55)' : i % 2 ? '#d9dde8' : '#f2c14e';
+          g.beginPath();
+          for (let k = 0; k <= 24; k++) {
+            const [x, y] = at(k / 24);
+            const wob = Math.sin(k * 2.3 + t * 2) * (pass ? 0.8 : 1.5);
+            k ? g.lineTo(x, y + wob) : g.moveTo(x, y + wob);
+          }
+          g.lineWidth = pass ? 1 : 3.4;
+          g.stroke();
+        }
+        return;
+      }
+      g.strokeStyle = 'rgba(20,40,20,0.8)';
+      g.lineWidth = 0.9;
+      g.beginPath();
+      for (let k = 0; k <= 16; k++) {
+        const [x, y] = at(k / 16);
+        k ? g.lineTo(x, y) : g.moveTo(x, y);
+      }
+      g.stroke();
+      const n = Math.max(4, Math.round(Math.abs(x2 - x1) / 9));
+      for (let k = 0; k <= n; k++) {
+        const [x, y] = at(k / n);
+        const c = BULBS[(k + i * 2) % BULBS.length];
+        const on = Math.sin(t * 2.6 + k * 1.4 + i) > -0.35;
+        if (on) U.glow(g, x, y + 2, 7, c + 'aa');
+        g.fillStyle = on ? c : U.shade(c, -0.5);
+        g.beginPath();
+        g.ellipse(x, y + 2, 1.7, 2.4, 0, 0, TAU);
+        g.fill();
+      }
+    }
+  }
+  function drawTree(g, t, s, d) {
+    g.save();
+    g.scale(s, s);
+    // skirt + trunk
+    g.fillStyle = '#5b3a24';
+    g.fillRect(-7, -22, 14, 22);
+    const sk = g.createLinearGradient(0, -8, 0, 4);
+    sk.addColorStop(0, '#c62a3c');
+    sk.addColorStop(1, '#7d1222');
+    g.fillStyle = sk;
+    g.beginPath();
+    g.ellipse(0, 0, 46, 8, 0, 0, TAU);
+    g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.92)';
+    g.beginPath();
+    g.ellipse(0, 3, 50, 5, 0, 0, Math.PI);
+    g.fill();
+    // tiers, back to front
+    TIERS.forEach(([by, hw], k) => {
+      const ay = by - TIER_H;
+      const gr = g.createLinearGradient(-hw, 0, hw, 0);
+      gr.addColorStop(0, '#0f4a2b');
+      gr.addColorStop(0.45, '#1f7d47');
+      gr.addColorStop(0.7, '#2a9655');
+      gr.addColorStop(1, '#14613a');
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(0, ay);
+      g.quadraticCurveTo(hw * 0.35, ay + TIER_H * 0.45, hw, by);
+      // scalloped bottom edge
+      const n = 5 + (TIERS.length - k);
+      for (let i = n; i > 0; i--) {
+        const x0 = -hw + ((i - 1) / n) * hw * 2;
+        const x1 = -hw + (i / n) * hw * 2;
+        g.quadraticCurveTo((x0 + x1) / 2, by + 7, x0, by);
+      }
+      g.quadraticCurveTo(-hw * 0.35, ay + TIER_H * 0.45, 0, ay);
+      g.fill();
+      // needle texture
+      g.strokeStyle = 'rgba(8,40,22,0.35)';
+      g.lineWidth = 1;
+      for (let i = 0; i < 7; i++) {
+        const u = (i + 0.5) / 7;
+        const x = -hw * 0.85 + u * hw * 1.7;
+        g.beginPath();
+        g.moveTo(x * 0.3, ay + 14);
+        g.lineTo(x, by - 2);
+        g.stroke();
+      }
+      // snow on the tips
+      g.fillStyle = 'rgba(255,255,255,0.9)';
+      for (let i = 0; i < n; i++) {
+        const x = -hw + ((i + 0.5) / n) * hw * 2;
+        if ((i + k) % 2) continue;
+        g.beginPath();
+        g.ellipse(x, by + 3, 5.5, 2.4, 0, 0, TAU);
+        g.fill();
+      }
+      g.beginPath();
+      g.ellipse(-hw * 0.18, ay + 10, 5, 2.2, -0.5, 0, TAU);
+      g.fill();
+    });
+    // ornaments
+    const orn = (d && d.orn) || LEGACY_ORN;
+    let gl = 0,
+      tn = 0;
+    for (const o of orn) {
+      if (o.k === 'treeLights') drawGarland(g, gl++, 'treeLights', t);
+      else if (o.k === 'tinsel') drawGarland(g, tn++, 'tinsel', t);
+    }
+    for (const o of orn) {
+      if (ON_TREE[o.k] === 'garland' || o.k === 'star') continue;
+      const it = ITEMS[o.k];
+      if (!it) continue;
+      g.save();
+      const drop = o.drop ? Math.pow(o.drop, 2) * 60 : 0;
+      g.translate(o.u, o.v - drop);
+      g.scale(ORN_SCALE, ORN_SCALE);
+      if (ON_TREE[o.k] === 'ball') g.rotate(Math.sin(t * 1.4 + o.u) * 0.08);
+      it.draw(g, t, 1, null, true);
+      g.restore();
+    }
+    if (orn.some((o) => o.k === 'star')) {
+      g.save();
+      g.translate(0, TREE_TOP + 4);
+      const pulse = 1 + Math.sin(t * 2) * 0.05;
+      U.glow(g, 0, 0, 34 * pulse, 'rgba(255,220,110,0.75)');
+      const gr = g.createRadialGradient(-3, -4, 1, 0, 0, 15);
+      gr.addColorStop(0, '#fff8d0');
+      gr.addColorStop(1, '#f2a91f');
+      g.fillStyle = gr;
+      star5(g, 15 * pulse);
+      g.fill();
+      g.restore();
+    }
+    g.restore();
+  }
+
   const ITEMS = {
     tree: {
       label: 'Christmas tree',
-      w: 90,
-      h: 130,
-      draw(g, t, s) {
-        g.fillStyle = '#5a3a22';
-        g.fillRect(-7 * s, -14 * s, 14 * s, 14 * s);
-        const tiers = 4;
-        for (let k = 0; k < tiers; k++) {
-          const y = -14 * s - k * 26 * s;
-          const w = (44 - k * 9) * s;
-          g.fillStyle = k % 2 ? '#1f7a44' : '#228c4c';
-          g.beginPath();
-          g.moveTo(-w, y);
-          g.lineTo(0, y - 44 * s);
-          g.lineTo(w, y);
-          g.closePath();
-          g.fill();
-          g.fillStyle = 'rgba(255,255,255,0.85)';
-          g.beginPath();
-          g.moveTo(-w * 0.55, y - 20 * s);
-          g.lineTo(0, y - 44 * s);
-          g.lineTo(w * 0.4, y - 24 * s);
-          g.quadraticCurveTo(0, y - 28 * s, -w * 0.55, y - 20 * s);
-          g.fill();
-        }
-        for (let i = 0; i < 16; i++) {
-          const k = (i * 37) % 100 / 100;
-          const y = -18 * s - k * 100 * s;
-          const half = (44 - k * 36) * s * 0.8;
-          const x = (((i * 53) % 100) / 50 - 1) * half;
-          const on = Math.sin(t * 3 + i * 1.7) > -0.2;
-          const c = BULBS[i % BULBS.length];
-          if (on) U.glow(g, x, y, 8 * s, c + '99');
-          g.fillStyle = on ? c : U.shade(c, -0.5);
-          g.beginPath();
-          g.arc(x, y, 2.6 * s, 0, TAU);
-          g.fill();
-        }
-        g.save();
-        g.translate(0, -130 * s);
-        U.glow(g, 0, 0, 22 * s, 'rgba(255,220,100,0.7)');
-        g.fillStyle = '#ffd34d';
-        star5(g, 10 * s);
-        g.fill();
-        g.restore();
-        // snow mound
-        g.fillStyle = 'rgba(255,255,255,0.95)';
-        g.beginPath();
-        g.ellipse(0, 0, 40 * s, 7 * s, 0, Math.PI, 0);
-        g.fill();
-      }
+      w: 132,
+      h: 204,
+      draw: (g, t, s, d) => drawTree(g, t, s, d)
     },
     lights: { label: 'Lights', w: 0, h: 0, string: true },
     candle: {
@@ -124,8 +271,38 @@
         g.fill();
       }
     },
-    redBauble: { label: 'Red bauble', w: 30, h: 60, hang: true, draw: (g, t, s) => bauble(g, '#e2293f', t, s) },
-    goldBauble: { label: 'Gold bauble', w: 30, h: 60, hang: true, draw: (g, t, s) => bauble(g, '#f2b73a', t, s) },
+    treeLights: { label: 'Tree lights', w: 40, h: 30, draw: (g, t, s) => drawSwag(g, -18 * s, -22 * s, 18 * s, -18 * s, 'treeLights', t) },
+    tinsel: { label: 'Tinsel', w: 40, h: 30, draw: (g, t, s) => drawSwag(g, -18 * s, -22 * s, 18 * s, -18 * s, 'tinsel', t) },
+    redBauble: { label: 'Red bauble', w: 30, h: 60, hang: true, draw: (g, t, s, d, onTree) => bauble(g, '#e2293f', t, s, onTree) },
+    goldBauble: { label: 'Gold bauble', w: 30, h: 60, hang: true, draw: (g, t, s, d, onTree) => bauble(g, '#f2b73a', t, s, onTree) },
+    blueBauble: { label: 'Blue bauble', w: 30, h: 60, hang: true, draw: (g, t, s, d, onTree) => bauble(g, '#2f7bf0', t, s, onTree) },
+    silverBauble: { label: 'Silver bauble', w: 30, h: 60, hang: true, draw: (g, t, s, d, onTree) => bauble(g, '#c9d1e0', t, s, onTree) },
+    bow: {
+      label: 'Bow',
+      w: 40,
+      h: 34,
+      draw(g, t, s) {
+        g.translate(0, -12 * s);
+        g.fillStyle = '#d42f3f';
+        g.beginPath();
+        g.ellipse(-9 * s, 0, 10 * s, 6 * s, -0.4, 0, TAU);
+        g.ellipse(9 * s, 0, 10 * s, 6 * s, 0.4, 0, TAU);
+        g.fill();
+        g.beginPath();
+        g.moveTo(-2 * s, 2 * s);
+        g.lineTo(-9 * s, 15 * s);
+        g.lineTo(-4 * s, 14 * s);
+        g.lineTo(0, 4 * s);
+        g.lineTo(4 * s, 14 * s);
+        g.lineTo(9 * s, 15 * s);
+        g.lineTo(2 * s, 2 * s);
+        g.fill();
+        g.fillStyle = '#9e1525';
+        g.beginPath();
+        g.arc(0, 0, 3.6 * s, 0, TAU);
+        g.fill();
+      }
+    },
     star: {
       label: 'Star',
       w: 50,
@@ -463,7 +640,7 @@
       }
     }
   };
-  const FREE = ['tree', 'lights', 'redBauble', 'star', 'wreath', 'candle'];
+  const FREE = ['tree', 'treeLights', 'redBauble', 'blueBauble', 'star', 'lights', 'wreath', 'candle'];
 
   function drawLights(g, d, t, editing) {
     const x1 = d.x,
@@ -522,7 +699,7 @@
     g.save();
     g.translate(d.x, d.y);
     if (it.hang) g.rotate(Math.sin(t * 1.3 + d.x) * 0.06);
-    it.draw(g, t, d.s || 1);
+    it.draw(g, t, d.s || 1, d);
     g.restore();
   }
 
@@ -545,6 +722,104 @@
         const s = d.s || 1;
         return { x0: d.x - (it.w / 2) * s, x1: d.x + (it.w / 2) * s, y0: d.y - it.h * s, y1: d.y + 4 };
       };
+      /* ---- trees and their ornaments ---- */
+      const trees = () => list.filter((d) => d.k === 'tree');
+      const ensureOrn = (tr) => (tr.orn = tr.orn || LEGACY_ORN.map((o) => Object.assign({}, o)));
+      // which tree (front-most) is under a point, in that tree's own units
+      function treeAt(x, y, margin = 6) {
+        const ts = trees();
+        for (let i = ts.length - 1; i >= 0; i--) {
+          const tr = ts[i];
+          const s = tr.s || 1;
+          const u = (x - tr.x) / s,
+            v = (y - tr.y) / s;
+          const hw = treeHalfWidth(v);
+          if (v >= TREE_TOP - 10 && v <= -10 && hw > 0 && Math.abs(u) <= hw + margin) return { tr, u, v };
+        }
+        return null;
+      }
+      function freeSpot(tr) {
+        // a spot on the branches that isn't crowded
+        const orn = ensureOrn(tr).filter((o) => o.u !== undefined);
+        let best = null,
+          bestD = -1;
+        for (let k = 0; k < 40; k++) {
+          const v = U.rand(TREE_TOP + 40, -30);
+          const hw = treeHalfWidth(v) * 0.82;
+          if (hw <= 4) continue;
+          const u = U.rand(-hw, hw);
+          let dmin = 1e9;
+          for (const o of orn) dmin = Math.min(dmin, Math.hypot(o.u - u, o.v - v));
+          if (dmin > bestD) {
+            bestD = dmin;
+            best = { u, v };
+          }
+        }
+        return best || { u: 0, v: -60 };
+      }
+      function sparkleAt(x, y) {
+        if (!env.particles) return;
+        env.particles.burst(x, y, 12, () => ({
+          vx: U.rand(-110, 110),
+          vy: U.rand(-140, 20),
+          drag: 3,
+          life: U.rand(0.5, 0.9),
+          shrink: true,
+          draw: DD.paint.star(U.pick(['#fff6c2', '#ffd56b', '#bfe0ff']), U.rand(2.5, 5))
+        }));
+      }
+      // put an ornament on a tree; returns true if it went on
+      function hangOn(tr, kind, u, v) {
+        const how = ON_TREE[kind];
+        if (!how) return false;
+        const orn = ensureOrn(tr);
+        const s = tr.s || 1;
+        if (how === 'top') {
+          if (!orn.some((o) => o.k === 'star')) orn.push({ k: 'star' });
+          sparkleAt(tr.x, tr.y + TREE_TOP * s);
+        } else if (how === 'garland') {
+          if (orn.filter((o) => o.k === kind).length >= 3) {
+            DD.toast('That tree is fully wrapped ✨', 1800);
+            return true;
+          }
+          orn.push({ k: kind });
+          sparkleAt(tr.x, tr.y - 90 * s);
+        } else {
+          if (orn.filter((o) => o.u !== undefined).length >= 40) {
+            DD.toast('The tree is full!', 1800);
+            return false;
+          }
+          if (u === undefined) ({ u, v } = freeSpot(tr));
+          const hw = treeHalfWidth(v) * 0.9;
+          orn.push({ k: kind, u: U.clamp(u, -hw, hw), v: U.clamp(v, TREE_TOP + 30, -26), drop: 1 });
+          sparkleAt(tr.x + u * s, tr.y + v * s);
+        }
+        DD.sound.play('chime');
+        return true;
+      }
+      // ornament handles on trees (drawn in tree units)
+      function ornAt(x, y) {
+        const ts = trees();
+        for (let i = ts.length - 1; i >= 0; i--) {
+          const tr = ts[i];
+          const s = tr.s || 1;
+          const orn = tr.orn || [];
+          for (let j = orn.length - 1; j >= 0; j--) {
+            const o = orn[j];
+            let ox, oy;
+            if (o.k === 'star') {
+              ox = tr.x;
+              oy = tr.y + (TREE_TOP + 4) * s;
+            } else if (o.u !== undefined) {
+              ox = tr.x + o.u * s;
+              oy = tr.y + (o.v - 4) * s;
+            } else continue;
+            if (U.dist(x, y, ox, oy) < Math.max(10, 9 * s)) return { tr, o };
+          }
+        }
+        return null;
+      }
+
       const closeBtn = (d) => {
         if (d.k === 'lights') return { x: (d.x + d.x2) / 2, y: Math.min(d.y, d.y2) - 16 };
         const b = bounds(d);
@@ -577,8 +852,14 @@
           }
         };
         h.onRelease = () => {
+          if (which === 'body' && ON_TREE[d.k] && d.k !== 'tree') {
+            const hit = treeAt(d.x, d.y - 4);
+            if (hit && hangOn(hit.tr, d.k, hit.u, hit.v)) {
+              list.splice(list.indexOf(d), 1);
+              hover = null;
+            } else DD.sound.play('pop');
+          } else DD.sound.play('pop');
           save();
-          DD.sound.play('pop');
         };
         h.onClick = () => {
           if (which === 'close') {
@@ -589,10 +870,55 @@
           } else if (which === 'body' && ITEMS[d.k].hang) DD.sound.play('chime');
         };
         h.onDblClick = () => {
-          if (d.k !== 'lights') {
+          if (d.k === 'tree') {
+            d.s = (d.s || 1) >= 3.1 ? 1.4 : Math.round(((d.s || 1) + 0.4) * 10) / 10;
+            save();
+          } else if (d.k !== 'lights') {
             d.s = (d.s || 1) >= 1.6 ? 0.8 : (d.s || 1) + 0.2;
             save();
           }
+        };
+        return h;
+      }
+
+      function ornOverFree(x, y) {
+        for (const d of list) {
+          if (d.k === 'tree' || d.k === 'lights') continue;
+          const b = bounds(d);
+          if (x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1) return true;
+        }
+        return false;
+      }
+      function makeOrnHandle(tr, o) {
+        const h = { kind: 'decor', d: tr, which: 'orn' };
+        let free = null;
+        h.onDrag = (px, py) => {
+          if (!free) {
+            // pull it off the tree
+            const orn = tr.orn || [];
+            orn.splice(orn.indexOf(o), 1);
+            free = { id: Date.now(), k: o.k, x: px, y: py, s: 1 };
+            list.push(free);
+            DD.sound.play('pop');
+          }
+          free.x = px;
+          free.y = py + 6;
+        };
+        h.onRelease = () => {
+          if (!free) return;
+          const hit = treeAt(free.x, free.y - 4);
+          if (hit && hangOn(hit.tr, free.k, hit.u, hit.v)) list.splice(list.indexOf(free), 1);
+          save();
+        };
+        h.onClick = () => {
+          DD.sound.play('chime');
+          sparkleAt(o.u !== undefined ? tr.x + o.u * (tr.s || 1) : tr.x, o.u !== undefined ? tr.y + o.v * (tr.s || 1) : tr.y + TREE_TOP * (tr.s || 1));
+        };
+        h.onDblClick = () => {
+          const orn = tr.orn || [];
+          orn.splice(orn.indexOf(o), 1);
+          DD.sound.play('pop');
+          save();
         };
         return h;
       }
@@ -602,11 +928,27 @@
           G = env.ground;
         const n = list.length;
         let d;
+        const ts = trees();
+        if (ON_TREE[kind] && kind !== 'candle' && (ts.length || ON_TREE[kind] === 'garland')) {
+          // with a tree on the desktop, ornaments go straight onto it
+          let tr = ts[ts.length - 1];
+          if (!tr) {
+            add('tree');
+            tr = trees()[0];
+          }
+          if (hangOn(tr, kind)) {
+            save();
+            return;
+          }
+        }
         if (kind === 'lights') {
           const y = st.h * 0.3 + (n % 4) * 40;
           d = { id: Date.now(), k: 'lights', x: W * 0.32, y, x2: W * 0.68, y2: y };
         } else if (kind === 'tree') {
-          d = { id: Date.now(), k: 'tree', x: W * (0.2 + Math.random() * 0.6), y: G - 4, s: 1.2 };
+          // big, off to one side so it isn't hidden behind the Dock
+          const side = trees().length % 2 ? 0.86 : 0.14;
+          const ts = U.clamp((st.h * 0.5) / -TREE_TOP, 1.4, 3);
+          d = { id: Date.now(), k: 'tree', x: U.clamp(W * (side + U.rand(-0.03, 0.03)), 74 * ts, W - 74 * ts), y: G - 4, s: ts, orn: [{ k: 'treeLights' }, { k: 'star' }] };
           const w = env.state.settings.weather || {};
           if (window.DD_CATALOG.resolveWeather(w.type, env.state.theme) === 'off' && env.api.setSetting)
             env.api.setSetting('weather', Object.assign({}, w, { type: 'snow' }));
@@ -647,7 +989,7 @@
           isLocked: (item) => item.pro && !env.pro,
           onLocked: (item) => env.upsell(`The ${item.label.toLowerCase()}`),
           onSelect: (_tab, id) => add(id),
-          footer: () => `<span style="flex:1">Drag · pull light ends · double-click to resize</span><button class="dd-btn" data-act="clear">Remove all</button><button class="dd-btn gold" data-act="done">Done</button>`,
+          footer: () => `<span style="flex:1">Drop ornaments on the tree · drag them off · double-click to resize</span><button class="dd-btn" data-act="clear">Remove all</button><button class="dd-btn gold" data-act="done">Done</button>`,
           onFooter: (act) => {
             if (act === 'clear') {
               list = [];
@@ -672,6 +1014,8 @@
 
       return {
         pick(x, y) {
+          const oh = ornAt(x, y);
+          if (oh && !ornOverFree(x, y)) return makeOrnHandle(oh.tr, oh.o);
           for (let i = list.length - 1; i >= 0; i--) {
             const d = list[i];
             const c = closeBtn(d);
@@ -708,6 +1052,7 @@
           g.fillStyle = 'rgba(10,10,30,0.08)';
           g.fillRect(0, 0, st.w, st.h);
           for (const d of list) {
+            if (d.orn) for (const o of d.orn) if (o.drop) o.drop = Math.max(0, o.drop - dt * 3);
             if (d.drop) {
               d.drop = Math.max(0, d.drop - dt * 3);
               g.save();

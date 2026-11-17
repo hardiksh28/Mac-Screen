@@ -583,14 +583,21 @@ ipcMain.on('theme:state', (_e, id, data) => {
 ipcMain.handle('theme:try', (_e, id) => startPreview(id));
 ipcMain.on('decor:save', (_e, list) => {
   if (!Array.isArray(list)) return;
-  const known = new Set(['tree', 'lights', 'candle', 'redBauble', 'goldBauble', 'star', 'wreath', 'stocking', 'candy', 'gift', 'bells', 'gingerbread', 'holly', 'santaHat', 'globe', 'cocoa', 'snowman']);
+  const known = new Set(['tree', 'lights', 'candle', 'redBauble', 'goldBauble', 'blueBauble', 'silverBauble', 'bow', 'treeLights', 'tinsel', 'star', 'wreath', 'stocking', 'candy', 'gift', 'bells', 'gingerbread', 'holly', 'santaHat', 'globe', 'cocoa', 'snowman']);
   const num = (v) => (Number.isFinite(+v) ? Math.round(+v * 10) / 10 : 0);
   settings.decorations = list
     .filter((d) => d && known.has(d.k))
     .slice(0, 120)
     .map((d) => {
-      const o = { id: num(d.id), k: d.k, x: num(d.x), y: num(d.y), s: Math.min(2, Math.max(0.5, num(d.s) || 1)) };
+      const maxS = d.k === 'tree' ? 3.4 : 2;
+      const o = { id: num(d.id), k: d.k, x: num(d.x), y: num(d.y), s: Math.min(maxS, Math.max(0.5, num(d.s) || 1)) };
       if (d.k === 'lights') Object.assign(o, { x2: num(d.x2), y2: num(d.y2) });
+      // ornaments hanging on a tree (positions are in the tree's own units)
+      if (d.k === 'tree' && Array.isArray(d.orn))
+        o.orn = d.orn
+          .filter((x) => x && known.has(x.k) && x.k !== 'tree')
+          .slice(0, 50)
+          .map((x) => (x.u === undefined ? { k: x.k } : { k: x.k, u: num(x.u), v: num(x.v) }));
       return o;
     });
   saveSettings();

@@ -26,6 +26,9 @@ module.exports = {
   PRODUCT_ID,
   API_BASE,
   PRICE_LABEL: '$1.49',
+  WEBSITE: 'https://macscreen.vercel.app',
+  // Public half of the gift-key signing key (see src/main/giftkey.js). Safe to publish.
+  GIFT_PUBLIC_KEY: 'j0j+6ojV3vl6nnz1tmHRVXbSlnDbtYb//D0D1XTVc0U=',
   SUPPORT_EMAIL: process.env.DD_SUPPORT_EMAIL || 'hardikhs2806@gmail.com',
   // Static payment link. After paying, Dodo emails the buyer a license key and
   // returns them to the redirect URL, which reopens the app.

@@ -231,7 +231,17 @@
         ctx.setTransform(st.dpr, 0, 0, st.dpr, 0, 0);
         st.onFrame(dt, st.time);
       }
+      // screen shake (explosions, smashes)
+      if (shakeAmt > 0.3) {
+        shakeAmt *= Math.max(0, 1 - dt * 7);
+        canvas.style.transform = `translate(${U.rand(-shakeAmt, shakeAmt)}px, ${U.rand(-shakeAmt, shakeAmt)}px)`;
+      } else if (shakeAmt) {
+        shakeAmt = 0;
+        canvas.style.transform = '';
+      }
     }
+    let shakeAmt = 0;
+    st.shake = (n) => (shakeAmt = Math.max(shakeAmt, n));
     let rt = null;
     window.addEventListener('resize', () => {
       clearTimeout(rt);
@@ -338,6 +348,22 @@
   /* ----------------------------------------------------------- draggable ground prop */
   // A thing that stands on the Dock: can be picked up, thrown, and falls back down.
   // spec: { x, w, h, draw(g, prop), groundFn, widthFn, onClick, onDblClick, onLand, bounce }
+  /* one click vs double-click on a toy: the single action waits a moment so a double-click can win */
+  DD.clicks = function (single, double, wait = 290) {
+    let timer = null;
+    return function (...args) {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+        return double && double(...args);
+      }
+      timer = setTimeout(() => {
+        timer = null;
+        single && single(...args);
+      }, wait);
+    };
+  };
+
   DD.prop = function (spec) {
     const p = Object.assign(
       { y: spec.groundFn(), vx: 0, vy: 0, held: false, tilt: 0, squash: 0, lift: 0, kind: 'prop' },
