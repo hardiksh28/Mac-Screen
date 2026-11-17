@@ -20,7 +20,7 @@ module.exports = {
   MODE,
   PRODUCT_ID,
   API_BASE,
-  PRICE_LABEL: '$1',
+  PRICE_LABEL: '$1.49',
   SUPPORT_EMAIL: process.env.DD_SUPPORT_EMAIL || 'support@example.com',
   // Static payment link. After paying, Dodo emails the buyer a license key and
   // returns them to the redirect URL, which reopens the app.
