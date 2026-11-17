@@ -12,6 +12,9 @@
 const MODE = process.env.DD_DODO_MODE || 'test'; // 'test' | 'live'
 const PRODUCT_ID = process.env.DD_DODO_PRODUCT_ID || 'pdt_0Ns9NcQODUVg2IyzRHEm9';
 
+// Paste the payment link from the Dodo dashboard here (optional; overrides the link built from PRODUCT_ID).
+const PAYMENT_LINK = process.env.DD_PAYMENT_LINK || '';
+
 const API_BASE = MODE === 'live' ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
 const CHECKOUT_BASE =
   MODE === 'live' ? 'https://checkout.dodopayments.com' : 'https://test.checkout.dodopayments.com';
@@ -25,8 +28,15 @@ module.exports = {
   // Static payment link. After paying, Dodo emails the buyer a license key and
   // returns them to the redirect URL, which reopens the app.
   checkoutUrl() {
-    const redirect = encodeURIComponent('deskdiorama://purchased');
-    return `${CHECKOUT_BASE}/buy/${PRODUCT_ID}?quantity=1&redirect_url=${redirect}`;
+    // Prefer the exact payment link copied from the Dodo dashboard (Products → your product → share / copy link).
+    const base = PAYMENT_LINK || `${CHECKOUT_BASE}/buy/${PRODUCT_ID}?quantity=1`;
+    try {
+      const u = new URL(base);
+      if (!u.searchParams.has('redirect_url')) u.searchParams.set('redirect_url', 'deskdiorama://purchased');
+      return u.toString();
+    } catch {
+      return base;
+    }
   },
   isConfigured() {
     return !PRODUCT_ID.includes('REPLACE_ME');
