@@ -78,13 +78,13 @@ jobs:
           $fw = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319"
           & "$fw\csc.exe" /nologo /optimize+ /target:winexe /platform:anycpu /define:UIA `
             /lib:"$fw\WPF" /r:UIAutomationClient.dll /r:UIAutomationTypes.dll /r:WindowsBase.dll `
-            /out:build/bin/win-helper.exe build/helper/win-helper.cs
+            /out:build\bin\win-helper.exe build\helper\win-helper.cs
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Smoke-test the window helper
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath build/bin/win-helper.exe -ArgumentList '1' -RedirectStandardOutput helper.out -PassThru -WindowStyle Hidden
+          $p = Start-Process -FilePath build\bin\win-helper.exe -ArgumentList '1' -RedirectStandardOutput helper.out -PassThru -WindowStyle Hidden
           Start-Sleep -Seconds 4
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           Get-Content helper.out -TotalCount 2
