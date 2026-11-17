@@ -16,10 +16,19 @@ const out = (p) => path.join(ROOT, p);
 
   // ---- theme thumbnails
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+  const catalog = require('../src/shared/catalog.js');
+  const artFor = (theme) => {
+    for (const sc of catalog.get(theme).scenes || []) {
+      const f = out(`assets/wallpapers/${theme}-${sc.id}.jpg`);
+      if (fs.existsSync(f)) return '&art=' + encodeURIComponent('file://' + f);
+    }
+    return '';
+  };
   for (const theme of ['winter', 'wizard', 'drive', 'ocean']) {
-    await page.goto(`${PREVIEW}?theme=${theme}&fresh=1&clean=1`);
+    const art = artFor(theme);
+    await page.goto(`${PREVIEW}?theme=${theme}&fresh=1&clean=1${art}`);
     await page.evaluate(() => sessionStorage.clear());
-    await page.goto(`${PREVIEW}?theme=${theme}&fresh=1&clean=1`);
+    await page.goto(`${PREVIEW}?theme=${theme}&fresh=1&clean=1${art}`);
     await page.waitForTimeout(theme === 'winter' ? 9000 : 4500);
     if (theme === 'winter') {
       // build a snowman for the thumbnail
@@ -49,7 +58,7 @@ const out = (p) => path.join(ROOT, p);
     s.decorations = d;
     localStorage.setItem('dd-mock-settings', JSON.stringify(s));
   });
-  await page.goto(`${PREVIEW}?theme=winter&clean=1`);
+  await page.goto(`${PREVIEW}?theme=winter&clean=1${artFor('winter')}`);
   await page.waitForTimeout(3000);
   await page.screenshot({ path: out('assets/thumbs/decorate.jpg'), type: 'jpeg', quality: 82 });
 
