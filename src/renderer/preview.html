@@ -1,0 +1,263 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Desk Diorama Preview</title>
+    <link rel="stylesheet" href="css/layer.css" />
+    <style>
+      body {
+        background: #000;
+      }
+      #wall,
+      #toys {
+        position: fixed;
+        inset: 0;
+      }
+      .menubar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 0 14px;
+        background: rgba(20, 20, 40, 0.28);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        color: #fff;
+        font-size: 13px;
+        z-index: 30;
+      }
+      .menubar b {
+        font-weight: 700;
+      }
+      .menubar .sp {
+        flex: 1;
+      }
+      .menubar button {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 3px 9px;
+        font: 500 12px -apple-system, sans-serif;
+        cursor: pointer;
+      }
+      .menubar button.on {
+        background: rgba(255, 255, 255, 0.4);
+      }
+      .dock {
+        position: fixed;
+        bottom: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 62px;
+        padding: 0 8px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        z-index: 1;
+      }
+      .dock i {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: block;
+      }
+      .dock .sep {
+        width: 1px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 0;
+      }
+      #toys {
+        z-index: 2;
+        pointer-events: none;
+      }
+      .menubar {
+        z-index: 40;
+      }
+      .menubar select {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 3px 4px;
+        font: 500 12px -apple-system, sans-serif;
+      }
+      .menubar select option {
+        color: #000;
+      }
+      .fakewin {
+        position: fixed;
+        left: 180px;
+        top: 260px;
+        width: 520px;
+        height: 300px;
+        background: #1e1e24;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        z-index: 1;
+        color: #aaa;
+        font-size: 13px;
+        overflow: hidden;
+      }
+      .fakewin .bar {
+        height: 32px;
+        background: #2a2a31;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 12px;
+        cursor: move;
+      }
+      .fakewin .bar i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ff5f57;
+      }
+      .fakewin .bar i:nth-child(2) {
+        background: #febc2e;
+      }
+      .fakewin .bar i:nth-child(3) {
+        background: #28c840;
+      }
+      .fakewin .bar span {
+        margin-left: 10px;
+        color: #ddd;
+      }
+      .fakewin .body {
+        padding: 20px;
+      }
+      body.dragwin #toys {
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="wall"></canvas>
+    <div class="dock">
+      <i style="background: linear-gradient(#5ac8fa, #1e7cf2)"></i>
+      <i style="background: linear-gradient(#d1d1d6, #8e8e93)"></i>
+      <i style="background: linear-gradient(#ffe066, #f5b400)"></i>
+      <i style="background: linear-gradient(#ff8a5b, #ff3b30)"></i>
+      <i style="background: linear-gradient(#7ee08a, #28a745)"></i>
+      <i style="background: linear-gradient(#c58bff, #7d3cff)"></i>
+      <i class="sep"></i>
+      <i style="background: linear-gradient(#e5e5ea, #aeaeb2)"></i>
+    </div>
+    <canvas id="toys"></canvas>
+    <div class="menubar">
+      <b></b><span>Desk Diorama preview</span><span class="sp"></span>
+      <span id="themes"></span>
+      <select id="wtype"></select><select id="wamt"></select><select id="wwind"></select>
+      <button id="clear">Clear snow</button>
+      <select id="send"><option value="">Send…</option><option value="santa">Santa</option><option value="snowmen">Snowmen</option><option value="plough">Snowplough</option><option value="yeti">Yeti</option></select>
+      <button id="deco">Decorate</button>
+      <button id="act">Action</button>
+    </div>
+    <div class="fakewin" id="fakewin"><div class="bar"><i></i><i></i><i></i><span>Finder</span></div><div class="body">Drag me around — snow piles up on my top edge.</div></div>
+    <script>
+      const q = new URLSearchParams(location.search);
+      window.__DD_PREVIEW = {
+        theme: q.get('theme') || 'winter',
+        pro: q.get('pro') !== '0',
+        groundInset: 74,
+        manual: true
+      };
+      if (q.get('fresh') === '1' && !sessionStorage.getItem('dd-fresh-done')) {
+        localStorage.removeItem('dd-mock-settings');
+        sessionStorage.setItem('dd-fresh-done', '1');
+      }
+    </script>
+    <script src="../shared/catalog.js"></script>
+    <script src="engine.js"></script>
+    <script src="themes/winter.js"></script>
+    <script src="themes/wizard.js"></script>
+    <script src="themes/drive.js"></script>
+    <script src="themes/ocean.js"></script>
+    <script src="weather.js"></script>
+    <script src="decor.js"></script>
+    <script src="layers.js"></script>
+    <script>
+      (async () => {
+        const theme = window.__DD_PREVIEW.theme;
+        const box = document.getElementById('themes');
+        DD_CATALOG.themes.forEach((t) => {
+          const b = document.createElement('button');
+          b.textContent = t.name;
+          if (t.id === theme) b.className = 'on';
+          b.onclick = () => {
+            q.set('theme', t.id);
+            location.search = q.toString();
+          };
+          box.appendChild(b);
+          box.appendChild(document.createTextNode(' '));
+        });
+        document.getElementById('act').textContent = DD_CATALOG.get(theme).action;
+        const api = DD._mock = DD.mockApi();
+        await DD.startWallpaper(document.getElementById('wall'), { api, theme, fps: 60 });
+        const o = await DD.startOverlay(document.getElementById('toys'), { api, theme });
+        window.__overlay = o;
+        document.getElementById('act').onclick = () => api._fireAction('surprise');
+        // weather controls
+        const st0 = await api.getState();
+        const w = Object.assign({}, DD_CATALOG.defaultWeather, st0.settings.weather);
+        const fill = (id, list, val, key) => {
+          const sel = document.getElementById(id);
+          list.forEach((o) => sel.add(new Option(o.label, o.id, false, o.id === val)));
+          sel.onchange = () => {
+            w[key] = sel.value;
+            api.setSetting('weather', Object.assign({}, w));
+          };
+        };
+        fill('wtype', DD_CATALOG.weatherTypes, w.type, 'type');
+        fill('wamt', DD_CATALOG.weatherAmounts, w.amount, 'amount');
+        fill('wwind', DD_CATALOG.winds, w.wind, 'wind');
+        document.getElementById('clear').onclick = () => api._fireAction('clear-snow');
+        document.getElementById('send').onchange = (e) => {
+          if (e.target.value) api._fireAction(e.target.value);
+          e.target.value = '';
+        };
+        document.getElementById('deco').textContent = st0.decorating ? 'Done decorating' : 'Decorate';
+        document.getElementById('deco').onclick = () => api.setDecorating(!st0.decorating);
+        // fake window → window rects for the snow
+        const fw = document.getElementById('fakewin');
+        const send = () => {
+          const r = fw.getBoundingClientRect();
+          api._fireWindows([{ id: 1, x: r.left, y: r.top, w: r.width, h: r.height }]);
+        };
+        send();
+        let drag = null;
+        fw.querySelector('.bar').addEventListener('pointerdown', (e) => {
+          drag = { x: e.clientX - fw.offsetLeft, y: e.clientY - fw.offsetTop };
+          document.body.classList.add('dragwin');
+        });
+        window.addEventListener('pointermove', (e) => {
+          if (!drag) return;
+          fw.style.left = e.clientX - drag.x + 'px';
+          fw.style.top = e.clientY - drag.y + 'px';
+          send();
+        });
+        window.addEventListener('pointerup', () => {
+          drag = null;
+          document.body.classList.remove('dragwin');
+        });
+        if (q.get('clean') === '1') document.querySelector('.menubar').style.display = 'none';
+        if (q.get('nowin') === '1' || q.get('clean') === '1') {
+          fw.style.display = 'none';
+          api._fireWindows([]);
+        }
+      })();
+    </script>
+  </body>
+</html>

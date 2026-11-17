@@ -1,0 +1,296 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.wallpaper {
+  background: #05060f;
+}
+canvas.stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+body.grabbing,
+body.grabbing * {
+  cursor: grabbing !important;
+}
+body.hovering {
+  cursor: grab;
+}
+
+/* ---------- glass panel ---------- */
+.dd-panel {
+  position: fixed;
+  width: 318px;
+  padding: 14px 14px 12px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(66, 52, 92, 0.72), rgba(40, 30, 60, 0.78));
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #fff;
+  animation: dd-pop 0.22s cubic-bezier(0.2, 1.4, 0.4, 1);
+  transform-origin: 30% 100%;
+  z-index: 10;
+}
+.dd-panel.closing {
+  animation: dd-out 0.16s ease forwards;
+}
+@keyframes dd-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+}
+@keyframes dd-out {
+  to {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+}
+.dd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.dd-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.dd-actions {
+  display: flex;
+  gap: 6px;
+}
+.dd-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 0;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.dd-icon:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.dd-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  margin-bottom: 10px;
+}
+.dd-tab {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font: 500 12px inherit;
+  font-family: inherit;
+  padding: 6px 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.dd-tab.on {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.dd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+.dd-item {
+  position: relative;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 6px 2px 5px;
+  color: rgba(255, 255, 255, 0.86);
+  font-family: inherit;
+  font-size: 10.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s;
+}
+.dd-item:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+.dd-item:active {
+  transform: scale(0.96);
+}
+.dd-item.on {
+  background: rgba(160, 190, 255, 0.28);
+  border-color: rgba(190, 210, 255, 0.75);
+  box-shadow: 0 0 0 2px rgba(150, 180, 255, 0.25);
+}
+.dd-item.locked canvas {
+  opacity: 0.55;
+  filter: saturate(0.6);
+}
+.dd-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.dd-lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd56b, #ff9f43);
+  color: #3a2300;
+  display: grid;
+  place-items: center;
+}
+.dd-foot {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.dd-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 11px;
+  font: 600 12px inherit;
+  font-family: inherit;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+.dd-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+.dd-btn.gold {
+  background: linear-gradient(135deg, #ffd56b, #ff9f43);
+  color: #3a2300;
+}
+
+/* ---------- toast ---------- */
+.dd-toast {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  transform: translate(-50%, -16px);
+  opacity: 0;
+  transition: 0.3s cubic-bezier(0.2, 1.2, 0.4, 1);
+  background: rgba(24, 22, 40, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+  white-space: nowrap;
+}
+.dd-toast.in {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.dd-toast a {
+  color: #ffd56b;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ---------- letter card ---------- */
+.dd-card {
+  position: fixed;
+  width: 300px;
+  padding: 22px 22px 16px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #fbf3dc, #f0e2bd);
+  color: #4a3420;
+  font-family: 'Iowan Old Style', 'Palatino', Georgia, serif;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  transform: translateY(30px) rotate(-3deg) scale(0.9);
+  opacity: 0;
+  transition: 0.35s cubic-bezier(0.2, 1.3, 0.4, 1);
+  z-index: 15;
+}
+.dd-card.in {
+  transform: none;
+  opacity: 1;
+}
+.dd-card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8a5a2b;
+}
+.dd-card p {
+  margin: 0 0 14px;
+  font-size: 17px;
+  line-height: 1.4;
+  font-style: italic;
+}
+.dd-card-close {
+  border: 0;
+  background: #7a1f1f;
+  color: #fbe9c8;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font: 600 12px -apple-system, sans-serif;
+  cursor: pointer;
+}
+
+/* decorate panel */
+.dd-tabs.dd-subtitle {
+  display: block;
+  background: none;
+  padding: 0;
+  margin: -4px 0 10px;
+}
+.dd-tabs.dd-subtitle .dd-tab {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.72);
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  cursor: default;
+}
+.dd-panel.dd-tall .dd-grid {
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.dd-panel.dd-tall .dd-grid::-webkit-scrollbar {
+  width: 6px;
+}
+.dd-panel.dd-tall .dd-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+}

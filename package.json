@@ -1,0 +1,108 @@
+{
+  "name": "desk-diorama",
+  "productName": "Desk Diorama",
+  "version": "1.0.0",
+  "description": "Live, interactive desktop wallpapers: build snowmen on your Dock, cast spells, cruise the city and feed the fish.",
+  "main": "src/main/main.js",
+  "author": "Desk Diorama",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "preview": "node scripts/serve-preview.js",
+    "icons": "node scripts/make-assets.js",
+    "dist:mac": "bash scripts/build-helper.sh && electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist": "bash scripts/build-helper.sh && electron-builder --mac --win",
+    "helper": "bash scripts/build-helper.sh"
+  },
+  "devDependencies": {
+    "electron": "^38.4.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.deskdiorama.app",
+    "productName": "Desk Diorama",
+    "copyright": "\u00a9 2026 Desk Diorama",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "protocols": [
+      {
+        "name": "Desk Diorama",
+        "schemes": [
+          "deskdiorama"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "LSUIElement": true
+      },
+      "extraResources": [
+        {
+          "from": "build/bin",
+          "to": "bin",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ],
+      "binaries": [
+        "build/bin/window-watcher"
+      ]
+    },
+    "dmg": {
+      "title": "Desk Diorama",
+      "contents": [
+        {
+          "x": 140,
+          "y": 200
+        },
+        {
+          "x": 400,
+          "y": 200,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  }
+}

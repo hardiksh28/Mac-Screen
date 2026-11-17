@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <title>Desk Diorama</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <aside class="side">
+      <div class="drag"></div>
+      <div class="brand"><img src="../../assets/icon-64.png" alt="" /><div><b>Desk Diorama</b><span id="planLabel">Free</span></div></div>
+      <nav>
+        <a data-nav="welcome">✨ Welcome</a>
+        <a data-nav="themes">🖼️ Themes</a>
+        <a data-nav="weather">❄️ Weather</a>
+        <a data-nav="decorate">🎄 Decorate</a>
+        <a data-nav="settings">⚙️ Settings</a>
+        <a data-nav="pro" class="pro-link">⭐ Unlock Pro</a>
+      </nav>
+      <div class="side-foot" id="sideFoot"></div>
+    </aside>
+
+    <main>
+      <div class="drag top"></div>
+
+      <!-- WELCOME -->
+      <section data-page="welcome">
+        <div class="hero">
+          <img class="hero-img" src="../../assets/thumbs/winter.jpg" alt="" />
+          <div class="hero-text">
+            <h1>Your desktop, but alive.</h1>
+            <p>Live wallpapers with little toys that sit on your Dock. Snowballs roll into snowmen, an owl brings you letters, a car does flips off a ramp and fish come up when you feed them.</p>
+            <div class="row">
+              <button class="btn primary" data-goto="themes">Pick a theme</button>
+              <button class="btn" data-goto="weather">Make it snow</button>
+            </div>
+          </div>
+        </div>
+        <h2>Try this</h2>
+        <div class="tips">
+          <div class="tip"><b>☃️ Build a snowman</b><span>Drag a snowball onto another one. Three makes a snowman. Double-click it to dress it up.</span></div>
+          <div class="tip"><b>🌨️ Shake for a blizzard</b><span>Wiggle your cursor left and right quickly while it’s snowing.</span></div>
+          <div class="tip"><b>🧹 Brush snow off windows</b><span>Swipe your cursor fast along the snow on top of a window.</span></div>
+          <div class="tip"><b>🎄 Deck your screen</b><span>Hang lights, baubles and a tree on your desktop. They stay behind your windows.</span></div>
+          <div class="tip"><b>🎅 Send visitors</b><span>From the menu bar icon: Santa, snowmen, a snowplough or a yeti.</span></div>
+          <div class="tip"><b>⌨️ Hide the toys</b><span>Press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>D</kbd> anytime to hide or show the toys.</span></div>
+        </div>
+        <p class="muted">Desk Diorama lives in your menu bar, so look for its icon at the top of your screen. Closing this window doesn’t quit it.</p>
+      </section>
+
+      <!-- THEMES -->
+      <section data-page="themes">
+        <h1>Themes</h1>
+        <p class="sub">Each theme has a live wallpaper and its own toys on the Dock.</p>
+        <div class="grid" id="themeGrid"></div>
+      </section>
+
+      <!-- WEATHER -->
+      <section data-page="weather">
+        <h1>Weather</h1>
+        <p class="sub">It falls over your whole screen, piles up on your windows and the Dock, and your cursor can push it around.</p>
+        <div class="chips" id="weatherTypes"></div>
+        <div class="card form">
+          <label>Amount <div class="seg" id="weatherAmount"></div></label>
+          <label>Wind <div class="seg" id="weatherWind"></div></label>
+          <label class="switch"><span>Pile up on top of windows<small id="winNote"></small></span><input type="checkbox" id="wOnWindows" /><i></i></label>
+          <label class="switch"><span>Pause weather</span><input type="checkbox" id="wPaused" /><i></i></label>
+          <div class="row">
+            <button class="btn" id="clearSnow">🧹 Clear snow</button>
+            <button class="btn" id="blizzard">🌪️ Start a blizzard</button>
+          </div>
+        </div>
+        <div class="tips small">
+          <div class="tip"><b>Push it</b><span>Move your cursor through the snow and it swirls away.</span></div>
+          <div class="tip"><b>Shake it</b><span>Shake the cursor fast to start a blizzard.</span></div>
+          <div class="tip"><b>Brush it</b><span>Swipe fast along a snowy ledge to knock the snow off.</span></div>
+        </div>
+      </section>
+
+      <!-- DECORATE -->
+      <section data-page="decorate">
+        <h1>Deck your screen</h1>
+        <p class="sub">Pick something and it lands on your desktop, behind your windows. Drag it anywhere, pull the ends of the lights to stretch them, and press × to take one down.</p>
+        <div class="deco-hero card">
+          <img src="../../assets/thumbs/decorate.jpg" alt="" />
+          <div>
+            <p>Christmas tree, string lights, baubles, stockings, a wreath, a snow globe and more. Planting a tree turns the snow on.</p>
+            <button class="btn primary" id="startDecorating">🎄 Start decorating</button>
+            <p class="muted" id="decoCount"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section data-page="settings">
+        <h1>Settings</h1>
+        <div class="card form">
+          <label class="switch"><span>Live wallpaper<small>Animated scene behind your desktop icons</small></span><input type="checkbox" data-set="wallpaper" /><i></i></label>
+          <label class="switch"><span>Toys on the Dock<small>⌥⌘D hides and shows them</small></span><input type="checkbox" data-set="toys" /><i></i></label>
+          <label class="switch"><span>Sound effects</span><input type="checkbox" data-set="sound" /><i></i></label>
+          <label class="switch"><span>Cursor sparkles<small>Wizard Academy wand trail</small></span><input type="checkbox" data-set="cursorEffects" /><i></i></label>
+          <label class="switch"><span>Pause on battery<small>Saves battery when you’re unplugged</small></span><input type="checkbox" data-set="pauseOnBattery" /><i></i></label>
+          <label class="switch" id="loginRow"><span>Open at login</span><input type="checkbox" data-set="launchAtLogin" /><i></i></label>
+          <label>Wallpaper smoothness <div class="seg" id="fpsSeg"></div></label>
+        </div>
+        <div class="row">
+          <button class="btn danger" id="quitBtn">Quit Desk Diorama</button>
+        </div>
+        <p class="muted" id="versionLine"></p>
+      </section>
+
+      <!-- PRO -->
+      <section data-page="pro">
+        <div class="thanks" id="thanks" hidden>🎉 Thank you! Check your email for your license key and paste it below.</div>
+        <div class="pro-card">
+          <div class="pro-left">
+            <span class="badge">Lifetime</span>
+            <h1><span id="price">$1</span> once. Everything, forever.</h1>
+            <ul>
+              <li>All themes: Wizard Academy, Night Drive, Coral Reef, plus every new one we add</li>
+              <li>Every snowman outfit: Santa hat, crown, tuxedo, gold chain…</li>
+              <li>All weather: rain, cherry blossoms, autumn leaves, hearts and confetti</li>
+              <li>The full decoration box: stockings, bells, snow globe, gingerbread…</li>
+              <li>The snowplough and the yeti</li>
+              <li>No subscription. No account. No ads.</li>
+            </ul>
+            <button class="btn primary big" id="buyBtn">Unlock for <span id="price2">$1</span></button>
+            <p class="muted small">Secure checkout by Dodo Payments. You’ll get a license key by email.</p>
+          </div>
+          <div class="pro-right">
+            <h3>Already bought it?</h3>
+            <div id="licForm">
+              <input id="licKey" placeholder="Paste your license key" spellcheck="false" autocomplete="off" />
+              <button class="btn" id="activateBtn">Activate</button>
+              <p class="msg" id="licMsg"></p>
+            </div>
+            <div id="licDone" hidden>
+              <p>✅ Pro is unlocked on this Mac.</p>
+              <p class="muted" id="licInfo"></p>
+              <button class="btn small" id="deactivateBtn">Move license to another Mac</button>
+            </div>
+            <p class="muted small" id="supportLine"></p>
+          </div>
+        </div>
+        <p class="devnote" id="devnote" hidden>Developer note: no Dodo Payments product ID is set yet. Add it in <code>src/main/config.js</code> to turn on checkout.</p>
+      </section>
+    </main>
+
+    <script src="../shared/catalog.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
