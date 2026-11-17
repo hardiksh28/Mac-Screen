@@ -62,6 +62,9 @@ Use `npm run dev` to open the app window on every launch.
 
 ## Build for release
 
+**No Apple Developer account?** Push to GitHub and the **Build macOS app** workflow (`.github/workflows/build-mac.yml`) builds an ad-hoc-signed universal `.dmg` on a free Mac runner. Download it from the run's *Artifacts*, or push a tag like `v1.0.0` to attach it to a GitHub Release. Buyers approve it once in System Settings; see **[docs/INSTALL.md](docs/INSTALL.md)**.
+
+
 On a Mac with Xcode Command Line Tools:
 
 ```bash
