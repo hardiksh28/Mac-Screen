@@ -79,7 +79,7 @@
       ],
       "identity": "-",
       "notarize": false,
-      "artifactName": "Desk-Diorama-${version}-${arch}.${ext}"
+      "artifactName": "Desk-Diorama-${arch}.${ext}"
     },
     "dmg": {
       "title": "Desk Diorama",
@@ -95,7 +95,7 @@
           "path": "/Applications"
         }
       ],
-      "artifactName": "Desk-Diorama-${version}-${arch}.${ext}"
+      "artifactName": "Desk-Diorama-${arch}.${ext}"
     },
     "win": {
       "icon": "build/icon.png",
