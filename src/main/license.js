@@ -40,8 +40,8 @@ function clear() {
   } catch {}
 }
 
-async function post(endpoint, body) {
-  const res = await fetch(`${config.API_BASE}${endpoint}`, {
+async function post(endpoint, body, base) {
+  const res = await fetch(`${base || config.API_BASE}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -79,10 +79,17 @@ module.exports = {
     if (key.length < 8) return { ok: false, error: 'Paste the license key from your purchase email.' };
     try {
       const name = `${os.hostname()} (${process.platform})`.slice(0, 120);
-      const r = await post('/licenses/activate', { license_key: key, name });
+      // try the configured environment first, then the other one (a test key won't exist in live and vice versa)
+      let r = null;
+      let used = null;
+      for (const base of config.API_BASES) {
+        r = await post('/licenses/activate', { license_key: key, name }, base);
+        used = base;
+        if (r.ok || r.status !== 404) break;
+      }
       if (!r.ok) return { ok: false, error: friendlyError(r.status, r.json) };
       const instanceId = r.json && (r.json.id || r.json.license_key_instance_id);
-      write({ key, instanceId, activatedAt: Date.now(), checkedAt: Date.now(), valid: true });
+      write({ key, instanceId, base: used, activatedAt: Date.now(), checkedAt: Date.now(), valid: true });
       return { ok: true };
     } catch (e) {
       return { ok: false, error: 'Could not reach the license server. Check your internet connection.' };
@@ -93,7 +100,7 @@ module.exports = {
     const l = read();
     if (l && l.instanceId) {
       try {
-        await post('/licenses/deactivate', { license_key: l.key, license_key_instance_id: l.instanceId });
+        await post('/licenses/deactivate', { license_key: l.key, license_key_instance_id: l.instanceId }, l.base);
       } catch {}
     }
     clear();
@@ -108,7 +115,7 @@ module.exports = {
     try {
       const body = { license_key: l.key };
       if (l.instanceId) body.license_key_instance_id = l.instanceId;
-      const r = await post('/licenses/validate', body);
+      const r = await post('/licenses/validate', body, l.base);
       if (r.ok && r.json && r.json.valid === false) {
         write({ ...l, valid: false, checkedAt: Date.now() });
         return false;

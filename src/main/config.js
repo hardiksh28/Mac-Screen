@@ -9,11 +9,11 @@
  * You can also override these without editing code, using environment variables at build time:
  *   DD_DODO_MODE=live DD_DODO_PRODUCT_ID=pdt_123 npm run dist:mac
  */
-const MODE = process.env.DD_DODO_MODE || 'test'; // 'test' | 'live'
+const MODE = process.env.DD_DODO_MODE || 'live'; // 'test' | 'live'
 const PRODUCT_ID = process.env.DD_DODO_PRODUCT_ID || 'pdt_0Ns9NcQODUVg2IyzRHEm9';
 
 // Paste the payment link from the Dodo dashboard here (optional; overrides the link built from PRODUCT_ID).
-const PAYMENT_LINK = process.env.DD_PAYMENT_LINK || '';
+const PAYMENT_LINK = process.env.DD_PAYMENT_LINK || 'https://checkout.dodopayments.com/buy/pdt_0Ns9NcQODUVg2IyzRHEm9?quantity=1';
 
 const API_BASE = MODE === 'live' ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
 const CHECKOUT_BASE =
@@ -21,6 +21,8 @@ const CHECKOUT_BASE =
 
 module.exports = {
   MODE,
+  // license keys are looked up here first, then in the other environment (test keys vs live keys)
+  API_BASES: MODE === 'live' ? ['https://live.dodopayments.com', 'https://test.dodopayments.com'] : ['https://test.dodopayments.com', 'https://live.dodopayments.com'],
   PRODUCT_ID,
   API_BASE,
   PRICE_LABEL: '$1.49',
