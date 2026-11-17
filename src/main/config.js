@@ -10,7 +10,7 @@
  *   DD_DODO_MODE=live DD_DODO_PRODUCT_ID=pdt_123 npm run dist:mac
  */
 const MODE = process.env.DD_DODO_MODE || 'test'; // 'test' | 'live'
-const PRODUCT_ID = process.env.DD_DODO_PRODUCT_ID || 'pdt_REPLACE_ME';
+const PRODUCT_ID = process.env.DD_DODO_PRODUCT_ID || 'pdt_0Ns9NcQODUVg2IyzRHEm9';
 
 const API_BASE = MODE === 'live' ? 'https://live.dodopayments.com' : 'https://test.dodopayments.com';
 const CHECKOUT_BASE =
@@ -21,7 +21,7 @@ module.exports = {
   PRODUCT_ID,
   API_BASE,
   PRICE_LABEL: '$1.49',
-  SUPPORT_EMAIL: process.env.DD_SUPPORT_EMAIL || 'support@example.com',
+  SUPPORT_EMAIL: process.env.DD_SUPPORT_EMAIL || 'hardikhs2806@gmail.com',
   // Static payment link. After paying, Dodo emails the buyer a license key and
   // returns them to the redirect URL, which reopens the app.
   checkoutUrl() {
