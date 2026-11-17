@@ -24,6 +24,17 @@ body.grabbing * {
 body.hovering {
   cursor: grab;
 }
+/* you're working in an app: toys and snow step aside */
+body.overlay canvas.stage,
+body.overlay .dd-toast {
+  transition: opacity 0.45s ease;
+}
+body.overlay.away canvas.stage,
+body.overlay.away .dd-toast,
+body.overlay.away .dd-panel {
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* ---------- glass panel ---------- */
 .dd-panel {

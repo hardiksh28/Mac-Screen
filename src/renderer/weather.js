@@ -1,8 +1,10 @@
 /*
  * Weather layer (runs in the toy overlay, on top of everything, fully click-through).
  *  - Snow / rain / blossoms / leaves / hearts / confetti
- *  - Flakes pile up on the bottom of the screen (the Dock) and on top of app windows
- *  - Your cursor blows the flakes around and brushes snow off ledges
+ *  - Flakes pile up on the Dock's icons and on top of app windows
+ *  - Close or minimise a window and its snow tumbles down onto whatever is below
+ *  - Your cursor blows the flakes around and brushes snow off ledges; brushed snow
+ *    rolls into snowballs (Snowy Village) so building a snowman is quick
  *  - Shake the cursor quickly to start a blizzard
  */
 (function () {
@@ -46,20 +48,94 @@
       }
       return p;
     }
-    function groundPile() {
-      return pileFor('ground', 0, st.w, env.ground, 22);
+    // The Dock: undefined = not known (pile along the whole bottom), null = no Dock at the
+    // bottom (it's on the side), else { x, w } of the icon area in this window's coordinates.
+    let dock;
+    function groundRange() {
+      if (dock === null) return null;
+      if (dock && dock.w > 40) return [Math.max(0, dock.x + 3), Math.min(st.w, dock.x + dock.w - 3)];
+      return [0, st.w];
     }
-    function dropPile(p, gentle) {
-      // the snow slides off as clumps
-      const col = (TYPES[type] || TYPES.snow).pileColor || ['#fff', '#fff'];
-      for (let i = 0; i < p.n; i += 3) {
-        const h = p.h[i];
-        if (h < 1.5) continue;
+    function groundPile() {
+      const r = groundRange();
+      if (!r) {
+        const old = piles.get('ground');
+        if (old) {
+          dropPile(old);
+          piles.delete('ground');
+        }
+        return null;
+      }
+      return pileFor('ground', r[0], r[1], env.ground, 22);
+    }
+    function setDock(d) {
+      const old = piles.get('ground');
+      dock = d ? { x: d.x, w: d.w } : d;
+      const r = groundRange();
+      if (!old || !r) return groundPile();
+      if (Math.abs(old.x0 - r[0]) <= 1 && Math.abs(old.x1 - r[1]) <= 1) return;
+      // the Dock grew or shrank (an app opened/quit): keep the snow, re-laid over the new icons
+      piles.delete('ground');
+      const p = pileFor('ground', r[0], r[1], env.ground, 22);
+      for (let i = 0; i < p.n; i++) {
         const x = p.x0 + i * BIN;
-        if (Math.random() < (gentle ? 0.25 : 0.6))
-          fx.add({ x, y: p.y - h / 2, vx: U.rand(-30, 30), vy: U.rand(-40, 20), g: 900, life: 1.4, shrink: true, draw: DD.paint.circle(col[0], Math.min(5, 1 + h * 0.3)) });
+        const j = Math.floor((x - old.x0) / BIN);
+        if (j >= 0 && j < old.n) p.h[i] = old.h[j];
+      }
+    }
+
+    // snow that falls off a ledge (window closed, minimised or moved) as clumps that
+    // land on whatever is underneath: another window or the Dock
+    const clumps = [];
+    function dropPile(p, gentle) {
+      const col = (TYPES[type] || TYPES.snow).pileColor || ['#fff', '#fff'];
+      for (let i = 0; i < p.n; i += 2) {
+        const h = Math.max(p.h[i], p.h[i + 1] || 0);
+        if (h < 0.8 || clumps.length > 900) continue;
+        if (gentle && Math.random() < 0.5) continue;
+        clumps.push({
+          x: p.x0 + i * BIN + U.rand(-1, 1),
+          y: p.y - h * U.rand(0.2, 0.9),
+          vx: U.rand(-28, 28),
+          vy: U.rand(-60, 15),
+          r: Math.min(4.6, 1.1 + h * 0.26),
+          amt: h * 2 * 0.85,
+          col: Math.random() < 0.5 ? col[0] : col[1],
+          piles: !!(TYPES[type] && TYPES[type].piles)
+        });
       }
       p.h.fill(0);
+    }
+    function updateClumps(dt, g) {
+      if (!clumps.length) return;
+      g.save();
+      for (let i = clumps.length - 1; i >= 0; i--) {
+        const c = clumps[i];
+        const yPrev = c.y;
+        c.vy += 1150 * dt;
+        c.vx *= Math.max(0, 1 - dt * 0.6);
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        if (c.vy > 0 && c.piles) {
+          const hit = surfaceHit(c.x, yPrev, c.y);
+          if (hit) {
+            addToPile(hit, c.x, c.amt);
+            if (Math.random() < 0.3) fx.add({ x: c.x, y: c.y - 2, vx: U.rand(-50, 50), vy: U.rand(-90, -30), g: 600, life: 0.35, shrink: true, draw: DD.paint.circle(c.col, 1.3) });
+            clumps.splice(i, 1);
+            continue;
+          }
+        }
+        if (c.y > st.h + 20) {
+          clumps.splice(i, 1);
+          continue;
+        }
+        g.globalAlpha = 0.95;
+        g.fillStyle = c.col;
+        g.beginPath();
+        g.arc(c.x, c.y, c.r, 0, TAU);
+        g.fill();
+      }
+      g.restore();
     }
 
     let windows = [];
@@ -173,14 +249,16 @@
     }
 
     /* ---------------- cursor: push flakes, brush piles, shake for a blizzard ---------------- */
-    const shake = { lastDir: 0, flips: [], };
+    const shake = { lastDir: 0, flips: [] };
+    const brush = { acc: 0, lastBall: -10, touched: -10, x: 0, y: 0 };
     function pointerUpdate(dt, t) {
       const p = env.pointer;
       if (!p.inside) return;
       const sp = Math.hypot(p.vx, p.vy);
       // shake detection: quick left-right reversals
       const dir = Math.sign(p.vx);
-      if (Math.abs(p.vx) > 900 && dir !== 0 && dir !== shake.lastDir) {
+      const brushing = t - brush.touched < 0.8; // sweeping snow back and forth isn't a "shake"
+      if (Math.abs(p.vx) > 900 && dir !== 0 && dir !== shake.lastDir && !brushing) {
         shake.flips.push(t);
         shake.lastDir = dir;
       }
@@ -193,7 +271,7 @@
         DD.toast(type === 'snow' ? '❄️ Blizzard!' : '🌪️ Whoosh!', 2000);
       }
       // brush piles under a fast-moving cursor
-      if (sp > 250) {
+      if (sp > 180) {
         for (const pile of piles.values()) {
           if (p.x < pile.x0 || p.x >= pile.x1) continue;
           const i = Math.floor((p.x - pile.x0) / BIN);
@@ -205,12 +283,26 @@
               if (j < 0 || j >= pile.n || pile.h[j] < 0.3) continue;
               const take = pile.h[j] * 0.6;
               pile.h[j] -= take;
+              brush.acc += take;
+              brush.touched = t;
+              brush.x = p.x;
+              brush.y = pile.y;
               if (Math.random() < 0.5)
                 fx.add({ x: pile.x0 + j * BIN, y: pile.y - pile.h[j] - 2, vx: p.vx * 0.25 + U.rand(-40, 40), vy: U.rand(-160, -40), g: 700, drag: 1.5, life: 1.1, shrink: true, draw: DD.paint.circle(col[0], U.rand(1.2, 2.6)) });
             }
           }
         }
+        // enough snow gathered → it rolls into a snowball (themes that have them)
+        brush.acc = Math.min(brush.acc, 260);
+        if (type === 'snow' && brush.acc > 70 && t - brush.lastBall > 0.45 && env.onBrushSnow) {
+          const r = U.clamp(8 + brush.acc * 0.035, 9, 15);
+          if (env.onBrushSnow(brush.x, brush.y - r - 2, r, U.clamp(p.vx * 0.25, -300, 300))) {
+            brush.acc = 0;
+            brush.lastBall = t;
+          }
+        }
       }
+      brush.acc *= Math.max(0, 1 - dt * 0.15); // gathered snow slowly crumbles away
     }
 
     /* ---------------- drawing ---------------- */
@@ -326,6 +418,7 @@
         }
       },
       setWindows,
+      setDock,
       _debug: () => [...piles.values()].map((p) => ({ id: p.id, y: p.y, max: Math.max(...p.h), avg: p.h.reduce((a, b) => a + b, 0) / p.n })),
       clear() {
         for (const p of piles.values()) dropPile(p);
@@ -334,16 +427,17 @@
       // used by the snowplough / yeti
       clearGround(x0, x1, spray = true) {
         const p = groundPile();
-        for (let i = Math.max(0, Math.floor(x0 / BIN)); i < Math.min(p.n, Math.ceil(x1 / BIN)); i++) {
+        if (!p) return;
+        for (let i = Math.max(0, Math.floor((x0 - p.x0) / BIN)); i < Math.min(p.n, Math.ceil((x1 - p.x0) / BIN)); i++) {
           if (spray && p.h[i] > 1 && Math.random() < 0.5)
-            fx.add({ x: i * BIN, y: p.y - p.h[i], vx: U.rand(-60, 160), vy: U.rand(-260, -100), g: 900, life: 0.9, shrink: true, draw: DD.paint.circle('#fff', U.rand(1.5, 3)) });
+            fx.add({ x: p.x0 + i * BIN, y: p.y - p.h[i], vx: U.rand(-60, 160), vy: U.rand(-260, -100), g: 900, life: 0.9, shrink: true, draw: DD.paint.circle('#fff', U.rand(1.5, 3)) });
           p.h[i] = 0;
         }
       },
       groundHeight(x) {
         const p = piles.get('ground');
-        if (!p) return 0;
-        return p.h[Math.floor(x / BIN)] || 0;
+        if (!p || x < p.x0 || x >= p.x1) return 0;
+        return p.h[Math.floor((x - p.x0) / BIN)] || 0;
       },
       burst(n = 60) {
         if (type === 'off') return;
@@ -351,7 +445,7 @@
       },
       frame(dt, t) {
         const g = st.ctx;
-        if (type === 'off' && !piles.size && !fx.count) return;
+        if (type === 'off' && !piles.size && !fx.count && !clumps.length) return;
         groundPile();
         blizzardT = Math.max(0, blizzardT - dt);
         gust *= blizzardT > 0 ? 0.999 : Math.max(0, 1 - dt * 0.8);
@@ -412,6 +506,7 @@
           drawFlake(g, f, t);
         }
         g.restore();
+        updateClumps(dt, g);
         for (const pile of piles.values()) relax(pile);
         drawPiles(g, t);
         fx.update(dt);

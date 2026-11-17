@@ -238,6 +238,28 @@
           api._fireWindows([{ id: 1, x: r.left, y: r.top, w: r.width, h: r.height }]);
         };
         send();
+        // the Dock's icon area → snow sits only on the icons
+        const dockEl = document.querySelector('.dock');
+        const sendDock = () => {
+          const r = dockEl.getBoundingClientRect();
+          api._fireWindows({ dock: { x: r.left, y: r.top, w: r.width, h: r.height } });
+        };
+        sendDock();
+        addEventListener('resize', sendDock);
+        // red / yellow buttons close / minimise the window: its snow tumbles down onto the Dock
+        fw.querySelectorAll('.bar i').forEach((dot, k) => {
+          if (k > 1) return;
+          dot.style.cursor = 'pointer';
+          dot.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            fw.style.display = 'none';
+            api._fireWindows([]);
+            setTimeout(() => {
+              fw.style.display = '';
+              send();
+            }, 5000);
+          });
+        });
         let drag = null;
         fw.querySelector('.bar').addEventListener('pointerdown', (e) => {
           drag = { x: e.clientX - fw.offsetLeft, y: e.clientY - fw.offsetTop };

@@ -25,7 +25,8 @@ Live, interactive wallpapers for macOS. Snowballs roll onto your Dock and stack 
 
 - Snow, rain, cherry blossoms, autumn leaves, hearts or confetti; or **Match the theme** / **Match the season**.
 - Amount (light → blizzard), wind (calm, breeze ←/→, gusty), pause, **Clear Snow**.
-- It **piles up on the Dock and on top of app windows**. Move a window and its snow slides off. Swipe the cursor fast along a ledge to brush it off.
+- It **piles up on the Dock's icons and on top of app windows**. Move, minimise or close a window and its snow tumbles down onto whatever is below. Swipe the cursor fast along a ledge to brush it off; in Snowy Village the brushed snow rolls into **snowballs**, so building a snowman is quick.
+- **Stays out of your way:** while you're working in an app, the snowmen and snow fade out and come back when you click the desktop. Turn on **Stay visible over apps** (Settings or the menu bar) to keep them on screen all the time.
 - The cursor pushes flakes around. **Shake the cursor** for a blizzard.
 
 **Deck your screen:** a tree, string lights (drag the ends to stretch), baubles, a star, wreath, stocking, candy cane, gifts, bells, gingerbread, holly, Santa hat, snow globe, cocoa and a snowman. They sit on the desktop **behind your windows**. Planting a tree turns the snow on.

@@ -30,6 +30,13 @@ jobs:
       - name: Build window helper (snow on windows)
         run: bash scripts/build-helper.sh
 
+      - name: Smoke-test the window helper
+        run: |
+          ./build/bin/window-watcher $$ > helper.out & HP=$!
+          sleep 3; kill $HP || true
+          head -c 600 helper.out; echo
+          grep -q '"dock"' helper.out
+
       - name: Build app (unsigned / ad-hoc signed)
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

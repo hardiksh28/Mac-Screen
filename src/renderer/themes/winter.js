@@ -2128,6 +2128,24 @@
       return b;
     }
 
+    // snow brushed off a ledge with the cursor rolls into a snowball (see weather.js)
+    env.onBrushSnow = (x, y, r, vx) => {
+      if (ents.filter((e) => e.kind === 'ball').length >= 8) return false;
+      const b = Ball(U.clamp(x, r + 2, W() - r - 2), Math.min(y, ground() - r), r);
+      b.vx = vx;
+      b.vy = -140;
+      ents.push(b);
+      poof(b.x, b.y, 8);
+      DD.sound.play('crunch');
+      idle = 0;
+      dirty = true;
+      if (!localFlag('brushTip')) {
+        setFlag('brushTip');
+        DD.toast('☃️ Brushed snow rolls into snowballs. Stack three for a snowman!', 4200);
+      }
+      return true;
+    };
+
     function randomOutfit() {
       const o = {};
       for (const tab of Object.keys(ITEMS)) {

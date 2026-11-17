@@ -1,7 +1,7 @@
 /*
- * Watches other apps' window positions (macOS) by running the bundled `window-watcher` helper.
- * If the helper isn't there (e.g. a dev build without it), this quietly does nothing and the
- * snow only piles up on the Dock.
+ * Watches other apps' window positions, the app in front and the Dock's icon area (macOS)
+ * by running the bundled `window-watcher` helper. If the helper isn't there (e.g. a dev build
+ * without it), this quietly does nothing and the snow only piles up along the bottom.
  */
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -49,8 +49,10 @@ module.exports = {
         const line = buf.slice(0, i);
         buf = buf.slice(i + 1);
         try {
-          const list = JSON.parse(line);
-          if (listener) listener(list);
+          const msg = JSON.parse(line);
+          // older helpers sent a bare array of windows
+          const info = Array.isArray(msg) ? { w: msg, front: '', pid: -1, dock: undefined } : msg;
+          if (listener) listener(info);
         } catch {}
       }
     });

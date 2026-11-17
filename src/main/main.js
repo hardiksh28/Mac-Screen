@@ -34,6 +34,7 @@ const DEFAULTS = {
   sound: true,
   fps: 30,
   cursorEffects: true,
+  overApps: false, // false: toys and snow step aside while you're working in an app
   pauseOnBattery: true,
   launchAtLogin: false,
   onboarded: false,
@@ -233,6 +234,8 @@ function createOverlay() {
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(RENDERER, 'overlay.html'));
   win.once('ready-to-show', () => win.showInactive());
+  // a fresh page needs the latest windows / Dock / away info
+  win.webContents.on('did-finish-load', () => setTimeout(resendWindows, 300));
   return win;
 }
 
@@ -260,23 +263,49 @@ function rebuildLayers() {
     overlayWin.destroy();
     overlayWin = null;
   }
+  updateWindowWatcher();
 }
 
 function updateWindowWatcher() {
-  if (weatherOn() && settings.weather.onWindows !== false) windowWatcher.start(sendWindows);
+  // runs whenever the toy layer is up: it reports windows (for snow), the app in front
+  // (so toys can step aside) and the Dock's icon area (so snow only sits on the icons)
+  if (overlayWin && !overlayWin.isDestroyed()) windowWatcher.start(sendWindows);
   else windowWatcher.stop();
 }
 let lastWindows = '';
-function sendWindows(list) {
-  if (!overlayWin || overlayWin.isDestroyed()) return;
+let lastInfo = null;
+let away = false;
+const FINDER = 'com.apple.finder';
+function computeAway(info) {
+  if (settings.overApps || decorating || !info || !info.front) return false;
+  if (info.pid === process.pid || info.front.toLowerCase() === FINDER) return false;
   const b = screen.getPrimaryDisplay().bounds;
-  const local = list
-    .filter((w) => w.x < b.x + b.width && w.x + w.w > b.x && w.y < b.y + b.height && w.y + w.h > b.y)
-    .map((w) => ({ id: w.id, x: w.x - b.x, y: w.y - b.y, w: w.w, h: w.h }));
-  const json = JSON.stringify(local);
+  // only when the app in front actually has a window on this screen
+  return (info.w || []).some((w) => w.f && w.x < b.x + b.width && w.x + w.w > b.x && w.y < b.y + b.height && w.y + w.h > b.y);
+}
+function sendWindows(info) {
+  lastInfo = info;
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  const ob = overlayWin.getBounds();
+  const snowOnWindows = weatherOn() && settings.weather.onWindows !== false;
+  const msg = {
+    windows: snowOnWindows
+      ? (info.w || [])
+          .filter((w) => w.x < ob.x + ob.width && w.x + w.w > ob.x && w.y < ob.y + ob.height && w.y + w.h > ob.y)
+          .map((w) => ({ id: w.id, x: w.x - ob.x, y: w.y - ob.y, w: w.w, h: w.h }))
+      : [],
+    away: computeAway(info)
+  };
+  if (info.dock !== undefined) msg.dock = info.dock ? { x: info.dock.x - ob.x, y: info.dock.y - ob.y, w: info.dock.w, h: info.dock.h, how: info.dock.how } : null;
+  away = msg.away;
+  const json = JSON.stringify(msg);
   if (json === lastWindows) return;
   lastWindows = json;
-  overlayWin.webContents.send('windows', local);
+  overlayWin.webContents.send('windows', msg);
+}
+function resendWindows() {
+  lastWindows = '';
+  if (lastInfo) sendWindows(lastInfo);
 }
 
 function reloadLayers() {
@@ -342,6 +371,7 @@ function setDecorating(on) {
   if (decorating === on) return;
   decorating = on;
   rebuildLayers();
+  resendWindows();
   if (overlayWin && !overlayWin.isDestroyed()) overlayWin.reload();
   broadcast();
 }
@@ -368,7 +398,7 @@ function setSetting(key, value) {
       return;
     }
     updateWindowWatcher();
-    if (wasType !== weatherType()) lastWindows = '';
+    resendWindows();
     broadcast();
     return;
   }
@@ -405,6 +435,9 @@ function setSetting(key, value) {
       break;
     case 'pauseOnBattery':
       updatePause();
+      break;
+    case 'overApps':
+      resendWindows();
       break;
   }
   broadcast();
@@ -492,6 +525,7 @@ function rebuildTray() {
     { label: 'Decorate Your Screen…', click: () => setDecorating(true) },
     { type: 'separator' },
     { label: 'Show Toys on Dock', type: 'checkbox', checked: settings.toys, accelerator: 'Alt+CommandOrControl+D', click: (i) => setSetting('toys', i.checked) },
+    { label: 'Stay Visible Over Apps', type: 'checkbox', checked: !!settings.overApps, click: (i) => setSetting('overApps', i.checked) },
     { label: 'Live Wallpaper', type: 'checkbox', checked: settings.wallpaper, click: (i) => setSetting('wallpaper', i.checked) },
     { label: 'Sound Effects', type: 'checkbox', checked: settings.sound, click: (i) => setSetting('sound', i.checked) },
     {

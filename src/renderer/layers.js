@@ -12,7 +12,7 @@
       if (next.theme !== state.theme || next.pro !== state.pro || !!next.decorating !== !!state.decorating) return onReload();
       if (stage.role === 'wallpaper' && next.scene && state.scene && next.scene.url !== state.scene.url) return onReload();
       DD.sound.enabled = next.settings.sound;
-      stage.paused = !!next.paused;
+      stage.paused = !!next.paused || !!stage.away;
       if (next.settings.fps && stage.role === 'wallpaper') stage.fps = next.settings.fps;
       Object.assign(state, next);
       onChange && onChange(next);
@@ -91,7 +91,35 @@
     const noToys = { pick: () => null, frame: () => {} };
     const toys = state.decorating ? DD.decor.editor(env) : state.settings.toys !== false ? theme.toys(env) : noToys;
     if (toys.debug) window.__dbg = toys.debug;
-    if (api.onWindows) api.onWindows((list) => env.weather.setWindows(list));
+    /* -------- other apps: windows (snow ledges), the Dock's icon area, and "step aside" -------- */
+    let away = false;
+    let awayTimer = null;
+    function setAway(v) {
+      if (v === away) return;
+      away = v;
+      document.body.classList.toggle('away', v);
+      clearTimeout(awayTimer);
+      if (v) {
+        setInteractive(false);
+        if (DD.panel && DD.panel.close) DD.panel.close();
+        // stop drawing once it has faded out (saves battery while you work)
+        awayTimer = setTimeout(() => {
+          stage.away = true;
+          stage.paused = true;
+        }, 700);
+      } else {
+        stage.away = false;
+        stage.paused = !!state.paused;
+      }
+    }
+    if (api.onWindows)
+      api.onWindows((m) => {
+        if (Array.isArray(m)) return env.weather.setWindows(m);
+        if (!m) return;
+        if ('dock' in m) env.weather.setDock(m.dock);
+        if (m.windows) env.weather.setWindows(m.windows);
+        if ('away' in m) setAway(!!m.away);
+      });
 
     /* -------- pointer routing: click-through everywhere except over toys and panels -------- */
     let interactive = false;
@@ -105,12 +133,12 @@
       const el = document.elementFromPoint(x, y);
       return !!(el && el.closest && el.closest('.dd-ui'));
     };
-    const pick = (x, y) => (toys.pick ? toys.pick(x, y) : null);
+    const pick = (x, y) => (!away && toys.pick ? toys.pick(x, y) : null);
 
     function updateHover(x, y) {
       if (down) return;
       const ent = pick(x, y);
-      const ui = overUI(x, y);
+      const ui = !away && overUI(x, y);
       setInteractive(!!ent || ui);
       document.body.classList.toggle('hovering', !!ent && !ui);
     }
